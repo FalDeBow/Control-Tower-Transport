@@ -172,28 +172,42 @@ export default function App() {
     year: 'numeric',
   });
 
-  useEffect(() => {
+useEffect(() => {
     const fetchDashboardData = async () => {
-      setIsLoading(true);
+      const cacheKey = `ctl_data_${mode}_${selectedDate}`;
+      
+      // 1. CEK MEMORI: Apakah ada data lama di memori HP/Browser?
+      const cachedData = localStorage.getItem(cacheKey);
+      if (cachedData) {
+        // Tampilkan seketika! (0 detik loading)
+        setDashboardData(JSON.parse(cachedData));
+      } else {
+        // Hanya munculkan layar loading hitam jika memori benar-benar kosong
+        setIsLoading(true); 
+      }
+
       try {
-        const filterTanggal =
-          mode === 'monthly' ? 'SEMUA TANGGAL' : selectedDate;
-        const GAS_API_URL =
-          'https://script.google.com/macros/s/AKfycbwUC07JIZ7ASWJhy4VyeHqXPnDQd2IPhmCraXOz9xg2Lti4dz9TxvlrNRS-Je7_7fsW/exec';
-        const response = await fetch(
-          `${GAS_API_URL}?action=getInitialData&tanggal=${filterTanggal}&rute=SEMUA%20RUTE`
-        );
+        // 2. SINKRONISASI LATAR BELAKANG: Ambil data terbaru dari Google Sheets
+        const filterTanggal = mode === 'monthly' ? 'SEMUA TANGGAL' : selectedDate;
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwUC07JIZ7ASWJhy4VyeHqXPnDQd2IPhmCraXOz9xg2Lti4dz9TxvlrNRS-Je7_7fsW/exec";
+        const response = await fetch(`${GAS_API_URL}?action=getInitialData&tanggal=${filterTanggal}&rute=SEMUA%20RUTE`);
         const data = await response.json();
-        if (data && data.dashboard) setDashboardData(data.dashboard);
+        
+        if (data && data.dashboard) {
+          // Perbarui tampilan dengan data ter-update
+          setDashboardData(data.dashboard);
+          // 3. SIMPAN KE MEMORI: Update memori untuk refresh selanjutnya
+          localStorage.setItem(cacheKey, JSON.stringify(data.dashboard));
+        }
       } catch (error) {
-        console.error('Fetch error:', error);
+        console.error("Fetch error:", error);
       } finally {
         setIsLoading(false);
       }
     };
+    
     fetchDashboardData();
   }, [mode, selectedDate]);
-
   const filteredRoutes =
     dashboardData?.routeRows?.filter((r) =>
       r.code.toLowerCase().includes(searchQuery.toLowerCase())
