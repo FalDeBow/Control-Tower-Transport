@@ -20,19 +20,20 @@ ChartJS.register(
   LinearScale
 );
 
-// TINTED FROSTED GLASS - Elegan, transparan, dan teks tetap tajam
+// RACIKAN TRANSPORT GLASS (Transparan elegan, blur jernih, tidak buram)
 const glassStyle = {
-  background: 'rgba(15, 23, 42, 0.88)',
-  backdropFilter: 'blur(12px)',
-  WebkitBackdropFilter: 'blur(12px)',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
+  background: 'rgba(15, 23, 42, 0.75)',
+  backdropFilter: 'blur(16px)',
+  WebkitBackdropFilter: 'blur(16px)',
+  border: '1px solid rgba(255, 255, 255, 0.12)',
+  boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
 };
 
 // KOMPONEN ACCORDION RUTE (MOBILE)
 const RouteAccordion = ({ rute, badgeClass }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="accordion-item" style={{ ...glassStyle, borderRadius: '12px', padding: '12px', marginBottom: '8px' }}>
+    <div className="accordion-item" style={{ ...glassStyle, borderRadius: '12px', padding: '14px', marginBottom: '8px' }}>
       <div className="accordion-header" onClick={() => setIsOpen(!isOpen)} style={{ borderBottom: 'none' }}>
         <span className="accordion-title" style={{ color: '#38bdf8', fontFamily: 'monospace' }}>🚚 {rute.code}</span>
         <span className="accordion-metrics">
@@ -69,7 +70,7 @@ const RouteAccordion = ({ rute, badgeClass }: any) => {
 const PointAccordion = ({ point, badgeClass }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="accordion-item" style={{ ...glassStyle, borderRadius: '12px', padding: '12px', marginBottom: '8px' }}>
+    <div className="accordion-item" style={{ ...glassStyle, borderRadius: '12px', padding: '14px', marginBottom: '8px' }}>
       <div className="accordion-header" onClick={() => setIsOpen(!isOpen)} style={{ borderBottom: 'none' }}>
         <span className="accordion-title" style={{ color: '#38bdf8' }}>📍 {point.name}</span>
         <span className="accordion-metrics">
@@ -119,7 +120,7 @@ export default function App() {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      const cacheKey = `transport_glass_v4_${mode}_${selectedDate}`;
+      const cacheKey = `transport_glass_v5_${mode}_${selectedDate}`;
       const cachedData = localStorage.getItem(cacheKey);
       if (cachedData) {
         const parsed = JSON.parse(cachedData);
@@ -190,9 +191,14 @@ export default function App() {
   };
 
   return (
-    <>
+    <div style={{ position: 'relative', minHeight: '100vh', background: '#070b14' }}>
+      
+      {/* AMBIENT LIGHT / GLOW DI BACKGROUND (Menghidupkan efek kaca transparan Transport Glass) */}
+      <div style={{ position: 'fixed', top: '-15%', left: '-10%', width: '55vw', height: '55vw', background: 'radial-gradient(circle, rgba(14, 165, 233, 0.14) 0%, rgba(0,0,0,0) 70%)', borderRadius: '50%', pointerEvents: 'none', zIndex: 0 }}></div>
+      <div style={{ position: 'fixed', bottom: '-15%', right: '-10%', width: '50vw', height: '50vw', background: 'radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, rgba(0,0,0,0) 70%)', borderRadius: '50%', pointerEvents: 'none', zIndex: 0 }}></div>
+
       {isLoading && (
-        <div id="loaderOverlay">
+        <div id="loaderOverlay" style={{ zIndex: 9999 }}>
           <div className="spinner"></div>
           <div style={{ fontSize: '11px', fontWeight: 700, color: '#38bdf8', letterSpacing: '2px' }}>
             LOADING TRANSPORT GLASS
@@ -200,14 +206,13 @@ export default function App() {
         </div>
       )}
 
-      {/* Mobile Overlay (Dikelola murni oleh CSS index.css) */}
       <div
         className={`mobile-overlay ${isMobileMenuOpen ? 'open' : ''}`}
         onClick={() => setIsMobileMenuOpen(false)}
       ></div>
 
       {/* SIDEBAR */}
-      <div className={`sidebar ${isMobileMenuOpen ? 'open' : ''}`} style={glassStyle}>
+      <div className={`sidebar ${isMobileMenuOpen ? 'open' : ''}`} style={{ ...glassStyle, borderRadius: '0 24px 24px 0', borderRight: '1px solid rgba(255,255,255,0.1)' }}>
         <h2>
           <span>🛡️ TRANSPORT GLASS</span>
         </h2>
@@ -253,10 +258,10 @@ export default function App() {
       </div>
 
       {/* MAIN CONTENT */}
-      <div className="main-content">
+      <div className="main-content" style={{ position: 'relative', zIndex: 2 }}>
         
         {/* TOP BAR */}
-        <div className="top-bar" style={glassStyle}>
+        <div className="top-bar" style={{ ...glassStyle, borderRadius: '16px' }}>
           <div className="brand-container">
             <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(true)}>☰</button>
             <div className="pulse-dot"></div>
@@ -537,6 +542,6 @@ export default function App() {
 
         </div>
       </div>
-    </>
+    </div>
   );
 }
