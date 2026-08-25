@@ -20,25 +20,25 @@ ChartJS.register(
   LinearScale
 );
 
-// --- KOMPONEN ACCORDION (MOBILE) ---
+// --- KOMPONEN ACCORDION (Hanya Tampil di Mobile berkat CSS Anda) ---
 const RouteAccordion = ({ rute, badgeClass }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="tr-glass tr-accordion-item">
-      <div className="tr-accordion-header" onClick={() => setIsOpen(!isOpen)}>
-        <span className="tr-font-mono" style={{ color: '#38bdf8', fontWeight: 'bold' }}>🚚 {rute.code}</span>
+    <div className="accordion-item">
+      <div className="accordion-header" onClick={() => setIsOpen(!isOpen)}>
+        <span className="accordion-title" style={{ color: '#38bdf8', fontFamily: 'monospace', fontSize: '14px' }}>🚚 {rute.code}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontSize: '11px', color: '#cbd5e1' }}>Load: <strong style={{ color: '#38bdf8' }}>{rute.load}</strong></span>
-          <span className={`tr-badge ${badgeClass}`}>{rute.status}</span>
+          <span className={`badge ${badgeClass}`}>{rute.status}</span>
           <span style={{ fontSize: '10px', color: '#94a3b8' }}>{isOpen ? '▲' : '▼'}</span>
         </div>
       </div>
       {isOpen && (
-        <div className="tr-accordion-body">
-          <div className="tr-acc-row"><span>Total Stop Points:</span><strong>{rute.points} Point</strong></div>
-          <div className="tr-acc-row"><span>Pure PU vs Drop:</span><strong>{rute.puDrop}</strong></div>
-          <div className="tr-acc-row"><span>SLA On-Time:</span><strong>{rute.sla}</strong></div>
-          <div className="tr-acc-row"><span>Rata-rata Delay:</span><strong>{rute.avgDelay}</strong></div>
+        <div className="accordion-body">
+          <div className="acc-detail-row"><span>Total Stop Points:</span><strong>{rute.points} Point</strong></div>
+          <div className="acc-detail-row"><span>Pure PU vs Drop:</span><strong>{rute.puDrop}</strong></div>
+          <div className="acc-detail-row"><span>SLA On-Time:</span><strong>{rute.sla}</strong></div>
+          <div className="acc-detail-row"><span>Rata-rata Delay:</span><strong>{rute.avgDelay}</strong></div>
         </div>
       )}
     </div>
@@ -48,26 +48,25 @@ const RouteAccordion = ({ rute, badgeClass }: any) => {
 const PointAccordion = ({ point, badgeClass }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="tr-glass tr-accordion-item">
-      <div className="tr-accordion-header" onClick={() => setIsOpen(!isOpen)}>
-        <span className="tr-font-mono" style={{ color: '#38bdf8', fontWeight: 'bold', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📍 {point.name}</span>
+    <div className="accordion-item">
+      <div className="accordion-header" onClick={() => setIsOpen(!isOpen)}>
+        <span className="accordion-title" style={{ color: '#38bdf8', fontFamily: 'monospace', fontSize: '14px', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📍 {point.name}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span className={`tr-badge ${badgeClass}`}>{point.visit}</span>
+          <span className={`badge ${badgeClass}`}>{point.visit}</span>
           <span style={{ fontSize: '10px', color: '#94a3b8' }}>{isOpen ? '▲' : '▼'}</span>
         </div>
       </div>
       {isOpen && (
-        <div className="tr-accordion-body">
-          <div className="tr-acc-row"><span>Pure PU / Drop SS:</span><strong>{point.puDrop}</strong></div>
-          <div className="tr-acc-row"><span>Bagging MB & BP:</span><strong>{point.mbBp}</strong></div>
-          <div className="tr-acc-row"><span>Status Transaksi:</span><strong style={{ color: '#34d399' }}>{point.status}</strong></div>
+        <div className="accordion-body">
+          <div className="acc-detail-row"><span>Pure PU / Drop SS:</span><strong>{point.puDrop}</strong></div>
+          <div className="acc-detail-row"><span>Bagging MB & BP:</span><strong>{point.mbBp}</strong></div>
+          <div className="acc-detail-row"><span>Status Transaksi:</span><strong style={{ color: '#34d399' }}>{point.status}</strong></div>
         </div>
       )}
     </div>
   );
 };
 
-// --- APP COMPONENT ---
 export default function App() {
   const [activeMenu, setActiveMenu] = useState('overview');
   const [dashboardData, setDashboardData] = useState<any>(null);
@@ -77,11 +76,14 @@ export default function App() {
   const [pinSearchQuery, setPinSearchQuery] = useState('');
   const [mode, setMode] = useState('monthly');
   const [selectedDate, setSelectedDate] = useState('2026-08-26');
+  
+  // Mobile UI States
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
+  // GPS State
   const [selectedRouteCode, setSelectedRouteCode] = useState('');
 
-  // Clock state
+  // Clock
   const [time, setTime] = useState(new Date());
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -90,12 +92,11 @@ export default function App() {
   const timeString = time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const dateString = time.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
-  // Data Fetching
+  // Fetching Logic
   useEffect(() => {
     const fetchDashboardData = async () => {
       const cacheKey = `transport_glass_clean_${mode}_${selectedDate}`;
       const cachedData = localStorage.getItem(cacheKey);
-      
       if (cachedData) {
         const parsed = JSON.parse(cachedData);
         setDashboardData(parsed);
@@ -132,16 +133,34 @@ export default function App() {
   const filteredRoutes = dashboardData?.routeRows?.filter((r: any) => r.code.toLowerCase().includes(searchQuery.toLowerCase())) || [];
   const filteredPoints = dashboardData?.pointRows?.filter((p: any) => p.name.toLowerCase().includes(searchQuery.toLowerCase())) || [];
   
-  // FIX Logika Rute GPS: Murni dari data base (tidak ada kode nyasar)
+  // FIX GPS: List Valid murni dari Data Dashboard Anda
   const validRouteCodes = dashboardData?.routeRows?.map((r: any) => r.code) || [];
   const filteredRouteCodes = validRouteCodes.filter((code: string) => code.toLowerCase().includes(pinSearchQuery.toLowerCase()));
 
-  // Setup Styles Utility
-  const getBadgeClass = (s: string) => {
-    if (!s) return 'badge-optimal';
-    if (s.includes('WARNING')) return 'badge-warning';
-    if (s.includes('CRITICAL')) return 'badge-critical';
-    return 'badge-optimal';
+  const getBadgeClass = (s: string) => !s ? 'badge-optimal' : s.includes('WARNING') ? 'badge-warning' : s.includes('CRITICAL') ? 'badge-critical' : 'badge-optimal';
+
+  // Helper Calendar CSS Asli
+  const renderCalendar = () => {
+    let days = [];
+    for (let i = 26; i <= 31; i++) days.push(<div key={`prev-${i}`} className="cal-cell-mini other-month">{i}</div>);
+    for (let d = 1; d <= 31; d++) {
+      let dateStr = `2026-08-${d < 10 ? '0' + d : d}`;
+      days.push(
+        <div
+          key={d}
+          className={`cal-cell-mini ${mode === 'daily' && dateStr === selectedDate ? 'selected' : ''}`}
+          onClick={() => { setMode('daily'); setSelectedDate(dateStr); }}
+        >
+          {d}
+        </div>
+      );
+    }
+    return days;
+  };
+
+  const handleMenuClick = (menu: string) => {
+    setActiveMenu(menu);
+    setIsMobileMenuOpen(false);
   };
 
   // MOCKUP AUTO-SEARCH MAPS ENGINE
@@ -152,408 +171,310 @@ export default function App() {
   };
 
   return (
+    // Fragment (<>) digunakan agar struktur berhadapan langsung dengan #root di index.css Anda
     <>
-      {/* 
-        INJEKSI CSS BULLETPROOF: 
-        CSS ini akan memaksa layout utama dan efek Liquid Glass berfungsi sempurna 
-        walaupun index.css asli Anda sudah terhapus/rusak kelasnya.
-      */}
-      <style>{`
-        /* Reset & Font Smoothing agar Teks Tajam di PC */
-        .tr-app-wrapper {
-          display: flex;
-          width: 100vw;
-          min-height: 100dvh;
-          background: #020617; /* Dark slate */
-          color: #f8fafc;
-          font-family: system-ui, -apple-system, sans-serif;
-          -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
-          overflow: hidden;
-          position: relative;
-        }
-
-        /* Background Animasi Gradient Opsional */
-        .tr-app-bg {
-          position: absolute;
-          inset: 0;
-          background: radial-gradient(circle at 15% 50%, rgba(14, 165, 233, 0.08), transparent 25%),
-                      radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.05), transparent 25%);
-          z-index: 0;
-          pointer-events: none;
-        }
-
-        /* LIQUID GLASS CORE - Resolusi PC Tembus Pandang Tajam */
-        .tr-glass {
-          background: rgba(255, 255, 255, 0.03);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-        }
-
-        /* LAYOUT: Sidebar (PC Kiri, Mobile Drawer) */
-        .tr-sidebar {
-          width: 260px;
-          height: 100dvh;
-          flex-shrink: 0;
-          display: flex;
-          flex-direction: column;
-          z-index: 40;
-          border-right: 1px solid rgba(255, 255, 255, 0.1);
-          background: rgba(15, 23, 42, 0.4);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          transition: transform 0.3s ease;
-        }
-
-        /* LAYOUT: Main Content (PC Kanan) */
-        .tr-main {
-          flex: 1;
-          height: 100dvh;
-          display: flex;
-          flex-direction: column;
-          overflow: hidden; /* Scroll diatur di dalam */
-          z-index: 10;
-        }
-        
-        .tr-scrollable-area {
-          flex: 1;
-          overflow-y: auto;
-          padding: 24px;
-        }
-
-        /* Nav & Cards */
-        .tr-nav-item {
-          padding: 12px 16px;
-          margin: 4px 16px;
-          border-radius: 8px;
-          cursor: pointer;
-          font-size: 13px;
-          font-weight: 500;
-          color: #94a3b8;
-          transition: all 0.2s;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-        .tr-nav-item:hover { background: rgba(255, 255, 255, 0.05); color: #fff; }
-        .tr-nav-item.active {
-          background: rgba(14, 165, 233, 0.15);
-          color: #38bdf8;
-          border: 1px solid rgba(14, 165, 233, 0.3);
-        }
-
-        .tr-card {
-          border-radius: 16px;
-          padding: 20px;
-          overflow: hidden;
-        }
-
-        /* KPI Grid responsif */
-        .tr-kpi-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-          gap: 16px;
-          margin-bottom: 24px;
-        }
-
-        /* TABEL: Agar tidak menyempit di HP dan proporsional di PC */
-        .tr-table-container {
-          width: 100%;
-          overflow-x: auto;
-          border-radius: 12px;
-        }
-        .tr-table {
-          width: 100%;
-          min-width: 700px; /* Force scroll di layar kecil */
-          border-collapse: collapse;
-          text-align: left;
-          font-size: 13px;
-        }
-        .tr-table th {
-          padding: 16px;
-          background: rgba(255,255,255,0.02);
-          color: #94a3b8;
-          font-weight: 600;
-          white-space: nowrap; /* Header tidak patah */
-          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .tr-table td {
-          padding: 16px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.02);
-          white-space: nowrap;
-        }
-
-        /* Badges */
-        .tr-badge { padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
-        .badge-optimal { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-        .badge-warning { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-        .badge-critical { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
-
-        /* Accordion Mobile */
-        .tr-accordion-item { border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
-        .tr-accordion-header { display: flex; justify-content: space-between; padding: 16px; cursor: pointer; }
-        .tr-accordion-body { padding: 16px; background: rgba(0,0,0,0.2); border-top: 1px solid rgba(255,255,255,0.05); font-size: 12px; color: #cbd5e1; }
-        .tr-acc-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
-
-        .tr-font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-
-        /* --- RESPONSIVE MOBILE --- */
-        .tr-mobile-menu-btn { display: none; background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; }
-        .tr-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 30; }
-        
-        .desktop-only { display: block; }
-        .mobile-only { display: none; }
-
-        @media (max-width: 768px) {
-          .tr-sidebar { position: fixed; left: 0; top: 0; transform: translateX(-100%); }
-          .tr-sidebar.open { transform: translateX(0); }
-          .tr-overlay.open { display: block; }
-          .tr-mobile-menu-btn { display: block; }
-          
-          /* Sembunyikan tabel di HP, tampilkan accordion */
-          .desktop-only { display: none; }
-          .mobile-only { display: block; }
-          
-          .tr-scrollable-area { padding: 16px; }
-        }
-      `}</style>
-
-      {/* LOADER */}
       {isLoading && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(2, 6, 23, 0.8)', backdropFilter: 'blur(8px)' }}>
-          <div style={{ width: '40px', height: '40px', border: '4px solid rgba(255,255,255,0.1)', borderTopColor: '#38bdf8', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-          <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
-          <div style={{ marginTop: '16px', fontSize: '11px', fontWeight: 700, color: '#38bdf8', letterSpacing: '2px' }}>SINKRONISASI DATA</div>
+        <div id="loaderOverlay">
+          <div className="spinner"></div>
+          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--app-accent)', letterSpacing: '2px' }}>
+            SINKRONISASI DATA
+          </div>
         </div>
       )}
 
-      {/* WRAPPER UTAMA */}
-      <div className="tr-app-wrapper">
-        <div className="tr-app-bg"></div>
+      {/* OVERLAY MOBILE CSS ASLI */}
+      <div
+        className={`mobile-overlay ${isMobileMenuOpen ? 'open' : ''}`}
+        onClick={() => setIsMobileMenuOpen(false)}
+      ></div>
 
-        {/* OVERLAY MOBILE */}
-        <div className={`tr-overlay ${isMobileMenuOpen ? 'open' : ''}`} onClick={() => setIsMobileMenuOpen(false)}></div>
+      {/* SIDEBAR CSS ASLI */}
+      <div className={`sidebar ${isMobileMenuOpen ? 'open' : ''}`}>
+        <h2>
+          {/* Logo Box Transparan */}
+          <svg style={{ width: '22px', height: '22px', color: 'var(--app-accent)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12" />
+          </svg>
+          <span style={{ marginLeft: '8px', flex: 1 }}>TR-GLASS</span>
+        </h2>
 
-        {/* SIDEBAR KIRI */}
-        <div className={`tr-sidebar ${isMobileMenuOpen ? 'open' : ''}`}>
-          <div style={{ padding: '24px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 900, letterSpacing: '2px', color: '#fff', display: 'flex', alignItems: 'center', gap: '10px', margin: 0 }}>
-              <svg style={{ width: '28px', height: '28px', color: '#38bdf8' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12" />
-              </svg>
-              TR-GLASS
-            </h2>
+        <div className="nav-menu">
+          <div className={`nav-item ${activeMenu === 'overview' ? 'active' : ''}`} onClick={() => handleMenuClick('overview')}>📊 Dashboard Overview</div>
+          <div className={`nav-item ${activeMenu === 'routes' ? 'active' : ''}`} onClick={() => handleMenuClick('routes')}>🚚 Load & SLA</div>
+          <div className={`nav-item ${activeMenu === 'points' ? 'active' : ''}`} onClick={() => handleMenuClick('points')}>📍 Info Point Task</div>
+          <div className={`nav-item ${activeMenu === 'geotag' ? 'active' : ''}`} onClick={() => handleMenuClick('geotag')}>🗺️ GPS History</div>
+        </div>
+
+        <div style={{ marginTop: 'auto' }}>
+          <label style={{ fontSize: '10px', color: 'var(--app-muted)', fontWeight: 700, display: 'block', marginBottom: '8px', letterSpacing: '0.5px' }}>
+            📅 PERIODE ANALISIS
+          </label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
+            <button className={`mode-btn ${mode === 'monthly' ? 'active' : ''}`} onClick={() => setMode('monthly')}>📈 Bulanan</button>
+            <button className={`mode-btn ${mode === 'daily' ? 'active' : ''}`}>📅 Harian</button>
+          </div>
+          <div className="sidebar-calendar">
+            <div className="cal-header-mini">
+              <span>Agustus 2026</span>
+              <span style={{ fontSize: '9px', cursor: 'pointer', background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px' }} onClick={() => setMode('monthly')}>
+                Reset
+              </span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center' }}>
+              {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map((hari) => (
+                <div key={hari} className="cal-day-lbl">{hari}</div>
+              ))}
+              {renderCalendar()}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* MAIN CONTENT CSS ASLI - Saya tambahkan anti-aliased untuk Liquid Glass Teks Blur */}
+      <div className="main-content" style={{ WebkitFontSmoothing: 'antialiased' }}>
+        
+        {/* TOP BAR LIQUID GLASS CSS ASLI */}
+        <div className="top-bar">
+          <div className="brand-container">
+            <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(true)}>☰</button>
+            <div className="pulse-dot"></div>
+            <div className="brand-text">
+              <h1>TRANSPORT <span>GLASS</span></h1>
+              <span className="brand-sub">SERVER: PROD-JKT // SYNC-OK</span>
+            </div>
           </div>
 
-          <div style={{ flex: 1, padding: '16px 0', overflowY: 'auto' }}>
-            <div className={`tr-nav-item ${activeMenu === 'overview' ? 'active' : ''}`} onClick={() => handleMenuClick('overview')}>📊 Dashboard Overview</div>
-            <div className={`tr-nav-item ${activeMenu === 'routes' ? 'active' : ''}`} onClick={() => handleMenuClick('routes')}>🚚 Load & SLA</div>
-            <div className={`tr-nav-item ${activeMenu === 'points' ? 'active' : ''}`} onClick={() => handleMenuClick('points')}>📍 Info Point Task</div>
-            <div className={`tr-nav-item ${activeMenu === 'geotag' ? 'active' : ''}`} onClick={() => handleMenuClick('geotag')}>🗺️ GPS History</div>
+          <div className="global-search-container">
+            <span className="global-search-icon">🔍</span>
+            <input
+              type="text"
+              className="global-search"
+              placeholder="Cari rute, point..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
 
-          <div style={{ padding: '20px 16px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-             <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 'bold', marginBottom: '10px', letterSpacing: '1px' }}>MODE ANALISIS</div>
-             <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => setMode('monthly')} style={{ flex: 1, padding: '8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', background: mode === 'monthly' ? 'rgba(56,189,248,0.2)' : 'rgba(255,255,255,0.05)', color: mode === 'monthly' ? '#38bdf8' : '#cbd5e1', border: mode === 'monthly' ? '1px solid rgba(56,189,248,0.3)' : '1px solid transparent', cursor: 'pointer' }}>📈 Bulan</button>
-                <button style={{ flex: 1, padding: '8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', background: mode === 'daily' ? 'rgba(56,189,248,0.2)' : 'rgba(255,255,255,0.05)', color: mode === 'daily' ? '#38bdf8' : '#cbd5e1', border: mode === 'daily' ? '1px solid rgba(56,189,248,0.3)' : '1px solid transparent', cursor: 'pointer' }}>📅 Hari</button>
-             </div>
+          <div className="top-bar-right">
+            <div className="ops-clock">
+              <span className="time">{timeString} WIB</span>
+              <span className="date">{dateString}</span>
+            </div>
+            <div className="action-btn">🔔<div className="notif-badge">3</div></div>
+            <div className="user-profile">
+              <div className="avatar">GB</div>
+              <div className="user-info">
+                <span className="name">Gwe Bowo</span>
+                <span className="role">Control Tower Ops</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* KONTEN UTAMA KANAN */}
-        <div className="tr-main">
+        {/* DASHBOARD CONTAINER CSS ASLI */}
+        <div className="dashboard-container">
           
-          {/* HEADER ATAS */}
-          <div className="tr-glass" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.1)', zIndex: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <button className="tr-mobile-menu-btn" onClick={() => setIsMobileMenuOpen(true)}>☰</button>
-              <div>
-                <h1 style={{ margin: 0, fontSize: '16px', fontWeight: 800 }}>TRANSPORT <span style={{ color: '#38bdf8' }}>GLASS</span></h1>
-                <div style={{ fontSize: '10px', color: '#34d399', fontWeight: 'bold', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                  <span style={{ width: '6px', height: '6px', background: '#34d399', borderRadius: '50%', display: 'inline-block' }}></span>
-                  SERVER: PROD-JKT
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <span style={{ position: 'absolute', left: '12px', fontSize: '12px', color: '#94a3b8' }}>🔍</span>
-                <input type="text" placeholder="Cari..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', padding: '8px 16px 8px 32px', color: '#fff', fontSize: '12px', outline: 'none', width: '150px' }} />
-              </div>
-              <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
-                <span className="tr-font-mono" style={{ color: '#38bdf8', fontSize: '13px', fontWeight: 'bold' }}>{timeString}</span>
-                <span style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase' }}>{dateString}</span>
-              </div>
-              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, #0ea5e9, #6366f1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px', boxShadow: '0 4px 10px rgba(14, 165, 233, 0.3)' }}>GB</div>
-            </div>
+          {/* KPI GRID CSS ASLI */}
+          <div className="kpi-grid">
+            <div className="kpi-card"><div className="title">Total Trip</div><div className="value">{dashboardData?.kpi?.tripCount || '0'}</div><div className="subtext">Unit Aktif</div></div>
+            <div className="kpi-card"><div className="title">Pure Pick-Up</div><div className="value">{dashboardData?.kpi?.totalPurePU || '0'}</div><div className="subtext">Pengambilan</div></div>
+            <div className="kpi-card"><div className="title">Pure Drop SS</div><div className="value">{dashboardData?.kpi?.totalPureDrop || '0'}</div><div className="subtext">Penurunan</div></div>
+            <div className="kpi-card"><div className="title">Total Workload</div><div className="value">{dashboardData?.kpi?.totalWorkloadEffort || '0'}</div><div className="subtext">Points Visit</div></div>
+            <div className="kpi-card"><div className="title">SLA On-Time</div><div className="value">{dashboardData?.kpi?.overallSlaPct || '0'}%</div><div className="subtext">Aman (No Delay)</div></div>
+            <div className="kpi-card"><div className="title">Real Load Factor</div><div className="value">{dashboardData?.kpi?.overallLoadPct || '0'}%</div><div className="subtext">Eq-PU Volume</div></div>
           </div>
 
-          {/* AREA SCROLL DASHBOARD */}
-          <div className="tr-scrollable-area">
-            
-            {/* KPI Cards (Glass Effect 100% Aktif) */}
-            <div className="tr-kpi-grid">
-              {[
-                { title: 'Total Trip', val: dashboardData?.kpi?.tripCount, sub: 'Unit Aktif' },
-                { title: 'Pure PU', val: dashboardData?.kpi?.totalPurePU, sub: 'Pengambilan' },
-                { title: 'Pure Drop SS', val: dashboardData?.kpi?.totalPureDrop, sub: 'Penurunan' },
-                { title: 'Workload', val: dashboardData?.kpi?.totalWorkloadEffort, sub: 'Points Visit' },
-                { title: 'SLA On-Time', val: `${dashboardData?.kpi?.overallSlaPct || '0'}%`, sub: 'No Delay' },
-                { title: 'Load Factor', val: `${dashboardData?.kpi?.overallLoadPct || '0'}%`, sub: 'Eq-PU Volume' },
-              ].map((kpi, i) => (
-                <div key={i} className="tr-glass tr-card" style={{ padding: '16px' }}>
-                  <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 'bold' }}>{kpi.title}</div>
-                  <div style={{ fontSize: '24px', fontWeight: 900, margin: '4px 0' }}>{kpi.val || '0'}</div>
-                  <div style={{ fontSize: '10px', color: '#38bdf8' }}>{kpi.sub}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* KONTEN MENU 1: OVERVIEW */}
-            {activeMenu === 'overview' && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-                <div className="tr-glass tr-card">
-                  <h3 style={{ fontSize: '14px', margin: '0 0 16px 0' }}>🍰 Distribusi Workload</h3>
-                  {dashboardData?.chartData ? (
-                    <div style={{ height: '240px' }}>
-                      <Doughnut data={{ labels: dashboardData.chartData.labels, datasets: [{ data: dashboardData.chartData.workloads, backgroundColor: ['#0ea5e9', '#38bdf8', '#f59e0b', '#10b981', '#6366f1', '#ec4899'], borderWidth: 0 }] }} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1' } } } }} />
-                    </div>
-                  ) : <p style={{ fontSize: '11px', color: '#94a3b8' }}>Loading...</p>}
-                </div>
-                <div className="tr-glass tr-card">
-                  <h3 style={{ fontSize: '14px', margin: '0 0 16px 0' }}>📈 SLA On-Time (%)</h3>
-                  {dashboardData?.chartData ? (
-                    <div style={{ height: '240px' }}>
-                      <Bar data={{ labels: dashboardData.chartData.labels, datasets: [{ label: 'SLA (%)', data: dashboardData.chartData.slas, backgroundColor: '#0ea5e9', borderRadius: 4 }] }} options={{ responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#cbd5e1' } }, x: { grid: { display: false }, ticks: { color: '#cbd5e1' } } }, plugins: { legend: { display: false } } }} />
-                    </div>
-                  ) : <p style={{ fontSize: '11px', color: '#94a3b8' }}>Loading...</p>}
-                </div>
-              </div>
-            )}
-
-            {/* KONTEN MENU 2: LOAD & SLA */}
-            {activeMenu === 'routes' && (
-              <div className="tr-glass tr-card" style={{ padding: 0 }}>
-                <div style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}><h3 style={{ margin: 0, fontSize: '14px' }}>🚚 Load & SLA per Rute</h3></div>
-                
-                <div style={{ padding: '20px' }}>
-                  {/* Tampilan PC (Tabel) */}
-                  <div className="desktop-only tr-table-container">
-                    <table className="tr-table">
-                      <thead>
-                        <tr>
-                          <th>RUTE</th><th>POINT</th><th>PURE PU/DROP</th><th>SLA %</th><th>AVG DELAY</th><th>NET LOAD %</th><th>STATUS</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredRoutes.map((r: any, i: number) => (
-                          <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
-                            <td className="tr-font-mono" style={{ color: '#38bdf8', fontWeight: 'bold' }}>{r.code}</td>
-                            <td>{r.points}</td><td>{r.puDrop}</td><td>{r.sla}</td><td style={{ color: '#fb7185' }}>{r.avgDelay}</td>
-                            <td style={{ color: '#38bdf8', fontWeight: 'bold' }}>{r.load}</td>
-                            <td><span className={`tr-badge ${getBadgeClass(r.status)}`}>{r.status}</span></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+          {/* MENU 1: OVERVIEW */}
+          {activeMenu === 'overview' && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
+              <div className="card-panel">
+                <div className="panel-header"><h3>🍰 Distribusi Workload</h3></div>
+                {dashboardData?.chartData ? (
+                  <div style={{ position: 'relative', width: '100%', height: '240px' }}>
+                    <Doughnut
+                      data={{
+                        labels: dashboardData.chartData.labels,
+                        datasets: [{ data: dashboardData.chartData.workloads, backgroundColor: ['#0ea5e9', '#38bdf8', '#f59e0b', '#10b981', '#6366f1', '#ec4899'], borderWidth: 0 }]
+                      }}
+                      options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1' } } } }}
+                    />
                   </div>
+                ) : <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Loading grafik...</p>}
+              </div>
 
-                  {/* Tampilan Mobile (Accordion) */}
-                  <div className="mobile-only">
+              <div className="card-panel">
+                <div className="panel-header"><h3>📈 SLA On-Time (%)</h3></div>
+                {dashboardData?.chartData ? (
+                  <div style={{ position: 'relative', width: '100%', height: '240px' }}>
+                    <Bar
+                      data={{
+                        labels: dashboardData.chartData.labels,
+                        datasets: [{ label: 'SLA (%)', data: dashboardData.chartData.slas, backgroundColor: '#0ea5e9', borderRadius: 4 }]
+                      }}
+                      options={{
+                        responsive: true, maintainAspectRatio: false,
+                        scales: {
+                          y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#cbd5e1' } },
+                          x: { grid: { display: false }, ticks: { color: '#cbd5e1' } }
+                        },
+                        plugins: { legend: { display: false } }
+                      }}
+                    />
+                  </div>
+                ) : <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Loading grafik...</p>}
+              </div>
+            </div>
+          )}
+
+          {/* MENU 2: LOAD & SLA */}
+          {activeMenu === 'routes' && (
+            <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="panel-header" style={{ padding: '20px 20px 0 20px' }}>
+                <h3>🚚 Load & SLA per Rute</h3>
+              </div>
+              
+              {/* Tambahan overflowX auto agar scroll rapi */}
+              <div style={{ overflowX: 'auto', padding: '0 20px 20px 20px' }}>
+                <table className="desktop-table-view" style={{ width: '100%', minWidth: '700px', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th>RUTE</th><th>POINT</th><th>PURE PU/DROP</th><th>SLA %</th><th>AVG DELAY</th><th>NET LOAD %</th><th>STATUS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                     {filteredRoutes.map((r: any, i: number) => (
-                      <RouteAccordion key={i} rute={r} badgeClass={getBadgeClass(r.status)} />
+                      <tr key={i}>
+                        <td style={{ color: '#38bdf8', fontWeight: 'bold', fontFamily: 'monospace' }}>{r.code}</td>
+                        <td>{r.points}</td><td>{r.puDrop}</td><td>{r.sla}</td><td style={{ color: '#f87171' }}>{r.avgDelay}</td>
+                        <td style={{ color: '#38bdf8', fontWeight: 'bold' }}>{r.load}</td>
+                        <td><span className={`badge ${getBadgeClass(r.status)}`}>{r.status}</span></td>
+                      </tr>
                     ))}
-                  </div>
+                    {filteredRoutes.length === 0 && (
+                      <tr><td colSpan={7} style={{ textAlign: 'center', padding: '16px', color: 'var(--app-muted)' }}>Data rute tidak ditemukan</td></tr>
+                    )}
+                  </tbody>
+                </table>
+                <div className="mobile-accordion-list">
+                  {filteredRoutes.map((r: any, i: number) => (
+                    <RouteAccordion key={i} rute={r} badgeClass={getBadgeClass(r.status)} />
+                  ))}
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* KONTEN MENU 3: POINT TASK */}
-            {activeMenu === 'points' && (
-              <div className="tr-glass tr-card" style={{ padding: 0 }}>
-                <div style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}><h3 style={{ margin: 0, fontSize: '14px' }}>📍 Info Point Task</h3></div>
-                
-                <div style={{ padding: '20px' }}>
-                  {/* Tampilan PC (Tabel) */}
-                  <div className="desktop-only tr-table-container">
-                    <table className="tr-table">
-                      <thead>
-                        <tr>
-                          <th>NAMA POINT</th><th>VISIT</th><th>PURE PU/DROP</th><th>MB & BP DETAIL</th><th>STATUS</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredPoints.map((p: any, i: number) => (
-                          <tr key={i}>
-                            <td className="tr-font-mono" style={{ color: '#38bdf8', fontWeight: 'bold' }}>{p.name}</td>
-                            <td>{p.visit}</td><td>{p.puDrop}</td><td style={{ color: '#fbbf24' }}>{p.mbBp}</td>
-                            <td><span className={`tr-badge ${getBadgeClass(p.status)}`}>{p.status}</span></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Tampilan Mobile (Accordion) */}
-                  <div className="mobile-only">
+          {/* MENU 3: INFO POINT TASK */}
+          {activeMenu === 'points' && (
+            <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="panel-header" style={{ padding: '20px 20px 0 20px' }}>
+                <h3>📍 Info Point Task</h3>
+              </div>
+              <div style={{ overflowX: 'auto', padding: '0 20px 20px 20px' }}>
+                <table className="desktop-table-view" style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th>NAMA POINT</th><th>VISIT</th><th>PURE PU/DROP</th><th>MB & BP DETAIL</th><th>STATUS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                     {filteredPoints.map((p: any, i: number) => (
-                      <PointAccordion key={i} point={p} badgeClass={getBadgeClass(p.status)} />
+                      <tr key={i}>
+                        <td style={{ color: '#38bdf8', fontWeight: 'bold', fontFamily: 'monospace' }}>{p.name}</td>
+                        <td>{p.visit}</td><td>{p.puDrop}</td><td style={{ color: '#fbbf24' }}>{p.mbBp}</td>
+                        <td><span className={`badge ${getBadgeClass(p.status)}`}>{p.status}</span></td>
+                      </tr>
                     ))}
-                  </div>
+                    {filteredPoints.length === 0 && (
+                      <tr><td colSpan={5} style={{ textAlign: 'center', padding: '16px', color: 'var(--app-muted)' }}>Data point tidak ditemukan</td></tr>
+                    )}
+                  </tbody>
+                </table>
+                <div className="mobile-accordion-list">
+                  {filteredPoints.map((p: any, i: number) => (
+                    <PointAccordion key={i} point={p} badgeClass={getBadgeClass(p.status)} />
+                  ))}
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* KONTEN MENU 4: GPS MAPS (Murni Data Rute Anda) */}
-            {activeMenu === 'geotag' && (
-              <div className="tr-glass tr-card" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)', minHeight: '500px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
-                  <h3 style={{ margin: 0, fontSize: '14px' }}>🗺️ History Jalur Maps</h3>
-                  <input type="text" placeholder="Cari Kode Rute..." value={pinSearchQuery} onChange={(e) => setPinSearchQuery(e.target.value)} style={{ padding: '8px 16px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '12px', outline: 'none', width: '100%', maxWidth: '240px', fontFamily: 'monospace' }} />
-                </div>
+          {/* MENU 4: GPS PINPOINT HISTORY (MURNI DATA BASE) */}
+          {activeMenu === 'geotag' && (
+            <div className="card-panel">
+              <div className="panel-header" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                <h3>🗺️ History Jalur Maps per Rute</h3>
+                <input
+                  type="text"
+                  placeholder="Cari Kode Rute..."
+                  value={pinSearchQuery}
+                  onChange={(e) => setPinSearchQuery(e.target.value)}
+                  style={{
+                    padding: '8px 12px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: '#fff',
+                    fontSize: '11px', outline: 'none', width: '100%', maxWidth: '240px', fontFamily: 'monospace'
+                  }}
+                />
+              </div>
 
-                <div style={{ display: 'flex', gap: '20px', flex: 1, overflow: 'hidden', flexDirection: 'row', flexWrap: 'wrap' }}>
-                  {/* List Rute di Kiri */}
-                  <div style={{ flex: '1 1 250px', display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto', paddingRight: '8px' }}>
-                    {filteredRouteCodes.map((code: string) => {
-                      const isSelected = selectedRouteCode === code;
-                      const rItem = dashboardData?.routeRows?.find((r: any) => r.code === code);
-                      return (
-                        <div key={code} onClick={() => setSelectedRouteCode(code)} style={{ padding: '14px', borderRadius: '12px', cursor: 'pointer', transition: 'all 0.2s', border: isSelected ? '1px solid #38bdf8' : '1px solid rgba(255,255,255,0.05)', background: isSelected ? 'rgba(56, 189, 248, 0.15)' : 'rgba(0,0,0,0.2)' }}>
-                          <div className="tr-font-mono" style={{ color: isSelected ? '#38bdf8' : '#e2e8f0', fontWeight: 'bold', fontSize: '12px', marginBottom: '4px' }}>🚚 {code}</div>
-                          <div style={{ fontSize: '11px', color: '#94a3b8', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>Pts: {rItem?.points || '0'}</span>
-                            <span style={{ color: rItem?.status?.includes('WARNING') ? '#fbbf24' : '#34d399' }}>{rItem?.status || 'Opt'}</span>
-                          </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginTop: '16px' }}>
+                {/* List Rute */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '420px', overflowY: 'auto', paddingRight: '6px' }}>
+                  {filteredRouteCodes.map((code: string) => {
+                    const isSelected = selectedRouteCode === code;
+                    const routeItem = dashboardData?.routeRows?.find((r: any) => r.code === code);
+                    return (
+                      <div
+                        key={code}
+                        onClick={() => setSelectedRouteCode(code)}
+                        style={{
+                          padding: '14px', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.2s',
+                          border: isSelected ? '1px solid var(--app-accent)' : '1px solid rgba(255,255,255,0.05)',
+                          background: isSelected ? 'rgba(56, 189, 248, 0.12)' : 'rgba(0,0,0,0.2)'
+                        }}
+                      >
+                        <div style={{ color: isSelected ? 'var(--app-accent)' : '#e2e8f0', fontWeight: 'bold', fontSize: '12px', fontFamily: 'monospace', marginBottom: '4px' }}>
+                          🚚 {code}
                         </div>
-                      );
-                    })}
-                  </div>
+                        <div style={{ fontSize: '10px', color: 'var(--app-muted)', display: 'flex', justifyContent: 'space-between' }}>
+                          <span>Total Stop Points: {routeItem?.points || '0'} Point</span>
+                          <span style={{ color: routeItem?.status?.includes('WARNING') ? '#fbbf24' : '#34d399', fontWeight: 'bold' }}>{routeItem?.status || 'Optimal'}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {filteredRouteCodes.length === 0 && (
+                    <div style={{ padding: '20px', textAlign: 'center', color: 'var(--app-muted)', fontSize: '11px', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '8px' }}>
+                      Kode rute tidak ditemukan dalam sistem.
+                    </div>
+                  )}
+                </div>
 
-                  {/* Render Peta di Kanan */}
-                  <div style={{ flex: '2 1 400px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', overflow: 'hidden', background: 'rgba(0,0,0,0.4)', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ padding: '12px 16px', background: 'rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span className="tr-font-mono" style={{ color: '#38bdf8', fontSize: '12px', fontWeight: 'bold' }}>🎯 Rute: {selectedRouteCode || '-'}</span>
-                      <span style={{ fontSize: '10px', background: 'rgba(0,0,0,0.5)', padding: '4px 8px', borderRadius: '4px', color: '#94a3b8' }}>Auto-Search Maps</span>
-                    </div>
-                    <div style={{ flex: 1, position: 'relative' }}>
-                      {selectedRouteCode ? (
-                        <iframe width="100%" height="100%" style={{ border: 0, position: 'absolute', inset: 0 }} allowFullScreen loading="lazy" src={renderMapsUrl()}></iframe>
-                      ) : (
-                        <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: '13px' }}>Pilih rute untuk melihat Maps</div>
-                      )}
-                    </div>
+                {/* Container Iframe Maps */}
+                <div style={{ border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', overflow: 'hidden', height: '420px', background: 'rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ padding: '12px 16px', background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: 'var(--app-accent)', fontSize: '11px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+                      🎯 Rute Terpilih: {selectedRouteCode || 'Pilih Rute'}
+                    </span>
+                    <span style={{ fontSize: '9px', background: 'rgba(0,0,0,0.5)', padding: '4px 8px', borderRadius: '4px', color: 'var(--app-muted)', letterSpacing: '0.5px' }}>Auto-Search Engine</span>
+                  </div>
+                  <div style={{ flex: 1, width: '100%', position: 'relative' }}>
+                    {selectedRouteCode ? (
+                      <iframe
+                        width="100%" height="100%" style={{ border: 0, position: 'absolute', top: 0, left: 0 }}
+                        allowFullScreen loading="lazy" src={renderMapsUrl()}
+                      ></iframe>
+                    ) : (
+                      <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: '12px' }}>
+                        Pilih rute untuk melihat Maps
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-          </div>
         </div>
       </div>
     </>
