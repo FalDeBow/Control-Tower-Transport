@@ -20,22 +20,13 @@ ChartJS.register(
   LinearScale
 );
 
-// RACIKAN TRANSPORT GLASS (Transparan elegan, blur jernih, tidak buram)
-const glassStyle = {
-  background: 'rgba(15, 23, 42, 0.75)',
-  backdropFilter: 'blur(16px)',
-  WebkitBackdropFilter: 'blur(16px)',
-  border: '1px solid rgba(255, 255, 255, 0.12)',
-  boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
-};
-
 // KOMPONEN ACCORDION RUTE (MOBILE)
 const RouteAccordion = ({ rute, badgeClass }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="accordion-item" style={{ ...glassStyle, borderRadius: '12px', padding: '14px', marginBottom: '8px' }}>
-      <div className="accordion-header" onClick={() => setIsOpen(!isOpen)} style={{ borderBottom: 'none' }}>
-        <span className="accordion-title" style={{ color: '#38bdf8', fontFamily: 'monospace' }}>🚚 {rute.code}</span>
+    <div className="accordion-item">
+      <div className="accordion-header" onClick={() => setIsOpen(!isOpen)}>
+        <span className="accordion-title">🚚 {rute.code}</span>
         <span className="accordion-metrics">
           <span>Load: <strong style={{ color: '#38bdf8' }}>{rute.load}</strong></span>
           <span className={`badge ${badgeClass}`}>{rute.status}</span>
@@ -43,22 +34,22 @@ const RouteAccordion = ({ rute, badgeClass }: any) => {
         </span>
       </div>
       {isOpen && (
-        <div className="accordion-body" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-          <div>
-            <span style={{ fontSize: '10px', color: '#94a3b8' }}>Total Stop Points:</span>
-            <strong style={{ display: 'block', fontSize: '12px', color: '#f8fafc' }}>{rute.points} Point</strong>
+        <div className="accordion-body">
+          <div className="acc-detail-row">
+            <span>Total Stop Points:</span>
+            <strong>{rute.points} Point</strong>
           </div>
-          <div>
-            <span style={{ fontSize: '10px', color: '#94a3b8' }}>Pure PU vs Drop:</span>
-            <strong style={{ display: 'block', fontSize: '12px', color: '#f8fafc' }}>{rute.puDrop}</strong>
+          <div className="acc-detail-row">
+            <span>Pure PU vs Drop:</span>
+            <strong>{rute.puDrop}</strong>
           </div>
-          <div>
-            <span style={{ fontSize: '10px', color: '#94a3b8' }}>SLA On-Time:</span>
-            <strong style={{ display: 'block', fontSize: '12px', color: '#34d399' }}>{rute.sla}</strong>
+          <div className="acc-detail-row">
+            <span>SLA On-Time:</span>
+            <strong>{rute.sla}</strong>
           </div>
-          <div>
-            <span style={{ fontSize: '10px', color: '#94a3b8' }}>Rata-rata Delay:</span>
-            <strong style={{ display: 'block', fontSize: '12px', color: '#fbbf24' }}>{rute.avgDelay}</strong>
+          <div className="acc-detail-row">
+            <span>Rata-rata Delay:</span>
+            <strong>{rute.avgDelay}</strong>
           </div>
         </div>
       )}
@@ -70,26 +61,26 @@ const RouteAccordion = ({ rute, badgeClass }: any) => {
 const PointAccordion = ({ point, badgeClass }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="accordion-item" style={{ ...glassStyle, borderRadius: '12px', padding: '14px', marginBottom: '8px' }}>
-      <div className="accordion-header" onClick={() => setIsOpen(!isOpen)} style={{ borderBottom: 'none' }}>
-        <span className="accordion-title" style={{ color: '#38bdf8' }}>📍 {point.name}</span>
+    <div className="accordion-item">
+      <div className="accordion-header" onClick={() => setIsOpen(!isOpen)}>
+        <span className="accordion-title">📍 {point.name}</span>
         <span className="accordion-metrics">
           <span className={`badge ${badgeClass}`}>{point.visit}</span>
           <span style={{ fontSize: '10px', marginLeft: '4px' }}>{isOpen ? '▲' : '▼'}</span>
         </span>
       </div>
       {isOpen && (
-        <div className="accordion-body" style={{ paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+        <div className="accordion-body">
           <div className="acc-detail-row">
-            <span style={{ color: '#94a3b8' }}>Pure PU / Drop SS:</span>
+            <span>Pure PU / Drop SS:</span>
             <strong>{point.puDrop}</strong>
           </div>
           <div className="acc-detail-row">
-            <span style={{ color: '#94a3b8' }}>Bagging MB & BP:</span>
+            <span>Bagging MB & BP:</span>
             <strong>{point.mbBp}</strong>
           </div>
           <div className="acc-detail-row">
-            <span style={{ color: '#94a3b8' }}>Status Transaksi:</span>
+            <span>Status Transaksi:</span>
             <strong style={{ color: '#34d399' }}>{point.status}</strong>
           </div>
         </div>
@@ -120,7 +111,7 @@ export default function App() {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      const cacheKey = `transport_glass_v5_${mode}_${selectedDate}`;
+      const cacheKey = `transport_glass_clean_${mode}_${selectedDate}`;
       const cachedData = localStorage.getItem(cacheKey);
       if (cachedData) {
         const parsed = JSON.parse(cachedData);
@@ -191,17 +182,12 @@ export default function App() {
   };
 
   return (
-    <div style={{ position: 'relative', minHeight: '100vh', background: '#070b14' }}>
-      
-      {/* AMBIENT LIGHT / GLOW DI BACKGROUND (Menghidupkan efek kaca transparan Transport Glass) */}
-      <div style={{ position: 'fixed', top: '-15%', left: '-10%', width: '55vw', height: '55vw', background: 'radial-gradient(circle, rgba(14, 165, 233, 0.14) 0%, rgba(0,0,0,0) 70%)', borderRadius: '50%', pointerEvents: 'none', zIndex: 0 }}></div>
-      <div style={{ position: 'fixed', bottom: '-15%', right: '-10%', width: '50vw', height: '50vw', background: 'radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, rgba(0,0,0,0) 70%)', borderRadius: '50%', pointerEvents: 'none', zIndex: 0 }}></div>
-
+    <>
       {isLoading && (
-        <div id="loaderOverlay" style={{ zIndex: 9999 }}>
+        <div id="loaderOverlay">
           <div className="spinner"></div>
-          <div style={{ fontSize: '11px', fontWeight: 700, color: '#38bdf8', letterSpacing: '2px' }}>
-            LOADING TRANSPORT GLASS
+          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--app-accent)', letterSpacing: '2px' }}>
+            SINKRONISASI DATA
           </div>
         </div>
       )}
@@ -211,8 +197,8 @@ export default function App() {
         onClick={() => setIsMobileMenuOpen(false)}
       ></div>
 
-      {/* SIDEBAR */}
-      <div className={`sidebar ${isMobileMenuOpen ? 'open' : ''}`} style={{ ...glassStyle, borderRadius: '0 24px 24px 0', borderRight: '1px solid rgba(255,255,255,0.1)' }}>
+      {/* SIDEBAR (Menggunakan struktur class CSS asli) */}
+      <div className={`sidebar ${isMobileMenuOpen ? 'open' : ''}`}>
         <h2>
           <span>🛡️ TRANSPORT GLASS</span>
         </h2>
@@ -240,7 +226,7 @@ export default function App() {
             <button className={`mode-btn ${mode === 'monthly' ? 'active' : ''}`} onClick={() => setMode('monthly')}>📈 Bulanan</button>
             <button className={`mode-btn ${mode === 'daily' ? 'active' : ''}`}>📅 Harian</button>
           </div>
-          <div className="sidebar-calendar" style={{ ...glassStyle, borderRadius: '12px', padding: '10px' }}>
+          <div className="sidebar-calendar">
             <div className="cal-header-mini">
               <span>Agustus 2026</span>
               <span style={{ fontSize: '9px', cursor: 'pointer', background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px' }} onClick={() => setMode('monthly')}>
@@ -258,18 +244,18 @@ export default function App() {
       </div>
 
       {/* MAIN CONTENT */}
-      <div className="main-content" style={{ position: 'relative', zIndex: 2 }}>
+      <div className="main-content">
         
         {/* TOP BAR */}
-        <div className="top-bar" style={{ ...glassStyle, borderRadius: '16px' }}>
+        <div className="top-bar">
           <div className="brand-container">
             <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(true)}>☰</button>
             <div className="pulse-dot"></div>
             <div className="brand-text">
               <h1>
-                TRANSPORT <span style={{ color: '#38bdf8' }}>GLASS</span>
+                TRANSPORT <span>GLASS</span>
               </h1>
-              <span className="brand-sub">NODE: SECURE-JKT // TRANSPARENT-OPS</span>
+              <span className="brand-sub">SERVER: PROD-JKT // SYNC-OK</span>
             </div>
           </div>
 
@@ -294,7 +280,7 @@ export default function App() {
               <div className="avatar">GB</div>
               <div className="user-info">
                 <span className="name">Gwe Bowo</span>
-                <span className="role">Operations Lead</span>
+                <span className="role">Control Tower Ops</span>
               </div>
             </div>
           </div>
@@ -305,18 +291,18 @@ export default function App() {
           
           {/* KPI GRID */}
           <div className="kpi-grid">
-            <div className="kpi-card" style={glassStyle}><div className="title">Total Trip</div><div className="value">{dashboardData?.kpi?.tripCount || '0'}</div><div className="subtext">Unit Aktif</div></div>
-            <div className="kpi-card" style={glassStyle}><div className="title">Pure Pick-Up</div><div className="value">{dashboardData?.kpi?.totalPurePU || '0'}</div><div className="subtext">Pengambilan</div></div>
-            <div className="kpi-card" style={glassStyle}><div className="title">Pure Drop SS</div><div className="value">{dashboardData?.kpi?.totalPureDrop || '0'}</div><div className="subtext">Penurunan</div></div>
-            <div className="kpi-card" style={glassStyle}><div className="title">Total Workload</div><div className="value">{dashboardData?.kpi?.totalWorkloadEffort || '0'}</div><div className="subtext">Points Visit</div></div>
-            <div className="kpi-card" style={glassStyle}><div className="title">SLA On-Time</div><div className="value">{dashboardData?.kpi?.overallSlaPct || '0'}%</div><div className="subtext">Aman (No Delay)</div></div>
-            <div className="kpi-card" style={glassStyle}><div className="title">Real Load Factor</div><div className="value">{dashboardData?.kpi?.overallLoadPct || '0'}%</div><div className="subtext">Eq-PU Volume</div></div>
+            <div className="kpi-card"><div className="title">Total Trip</div><div className="value">{dashboardData?.kpi?.tripCount || '0'}</div><div className="subtext">Unit Aktif</div></div>
+            <div className="kpi-card"><div className="title">Pure Pick-Up</div><div className="value">{dashboardData?.kpi?.totalPurePU || '0'}</div><div className="subtext">Pengambilan</div></div>
+            <div className="kpi-card"><div className="title">Pure Drop SS</div><div className="value">{dashboardData?.kpi?.totalPureDrop || '0'}</div><div className="subtext">Penurunan</div></div>
+            <div className="kpi-card"><div className="title">Total Workload</div><div className="value">{dashboardData?.kpi?.totalWorkloadEffort || '0'}</div><div className="subtext">Points Visit</div></div>
+            <div className="kpi-card"><div className="title">SLA On-Time</div><div className="value">{dashboardData?.kpi?.overallSlaPct || '0'}%</div><div className="subtext">Aman (No Delay)</div></div>
+            <div className="kpi-card"><div className="title">Real Load Factor</div><div className="value">{dashboardData?.kpi?.overallLoadPct || '0'}%</div><div className="subtext">Eq-PU Volume</div></div>
           </div>
 
           {/* 1. OVERVIEW */}
           {activeMenu === 'overview' && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(0, 1fr))', gap: '16px' }}>
-              <div className="card-panel" style={glassStyle}>
+              <div className="card-panel">
                 <div className="panel-header"><h3>🍰 Distribusi Workload</h3></div>
                 {dashboardData?.chartData ? (
                   <div style={{ position: 'relative', width: '100%', height: '240px' }}>
@@ -335,7 +321,7 @@ export default function App() {
                 ) : <p style={{ fontSize: '11px', color: '#94a3b8' }}>Loading grafik...</p>}
               </div>
 
-              <div className="card-panel" style={glassStyle}>
+              <div className="card-panel">
                 <div className="panel-header"><h3>📈 SLA On-Time (%)</h3></div>
                 {dashboardData?.chartData ? (
                   <div style={{ position: 'relative', width: '100%', height: '240px' }}>
@@ -353,7 +339,7 @@ export default function App() {
                         responsive: true,
                         maintainAspectRatio: false,
                         scales: {
-                          y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#cbd5e1' } },
+                          y: { min: 0, max: 100, grid: { color: '#1f2937' }, ticks: { color: '#cbd5e1' } },
                           x: { grid: { display: false }, ticks: { color: '#cbd5e1' } }
                         },
                         plugins: { legend: { display: false } }
@@ -367,7 +353,7 @@ export default function App() {
 
           {/* 2. LOAD & SLA */}
           {activeMenu === 'routes' && (
-            <div className="card-panel" style={{ ...glassStyle, padding: 0, overflow: 'hidden' }}>
+            <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
               <div className="panel-header" style={{ padding: '20px 20px 0 20px' }}>
                 <h3>🚚 Load & SLA per Rute</h3>
               </div>
@@ -387,11 +373,11 @@ export default function App() {
                   <tbody>
                     {filteredRoutes.map((r: any, i: number) => (
                       <tr key={i}>
-                        <td style={{ color: '#38bdf8', fontWeight: 'bold', fontFamily: 'monospace' }}>{r.code}</td>
+                        <td style={{ color: '#38bdf8', fontWeight: 'bold' }}>{r.code}</td>
                         <td>{r.points}</td>
                         <td>{r.puDrop}</td>
-                        <td style={{ color: '#34d399', fontWeight: 600 }}>{r.sla}</td>
-                        <td style={{ color: '#fbbf24' }}>{r.avgDelay}</td>
+                        <td>{r.sla}</td>
+                        <td>{r.avgDelay}</td>
                         <td style={{ color: '#38bdf8', fontWeight: 'bold' }}>{r.load}</td>
                         <td>
                           <span className={`badge ${getBadgeClass(r.status)}`}>{r.status}</span>
@@ -414,7 +400,7 @@ export default function App() {
 
           {/* 3. INFO POINT TASK */}
           {activeMenu === 'points' && (
-            <div className="card-panel" style={{ ...glassStyle, padding: 0, overflow: 'hidden' }}>
+            <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
               <div className="panel-header" style={{ padding: '20px 20px 0 20px' }}>
                 <h3>📍 Info Point Task</h3>
               </div>
@@ -457,8 +443,8 @@ export default function App() {
 
           {/* 4. GPS PINPOINT HISTORY */}
           {activeMenu === 'geotag' && (
-            <div className="card-panel" style={glassStyle}>
-              <div className="panel-header" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+            <div className="card-panel">
+              <div className="panel-header" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h3>🗺️ History Jalur Maps per Rute</h3>
                 <input
                   type="text"
@@ -514,7 +500,7 @@ export default function App() {
                 </div>
 
                 <div style={{ border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', overflow: 'hidden', height: '420px', background: 'rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ padding: '12px 16px', background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ padding: '12px 16px', background: 'var(--app-card)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     <span style={{ color: '#38bdf8', fontSize: '11px', fontWeight: 'bold', fontFamily: 'monospace' }}>
                       🎯 Rute Terpilih: {selectedRouteCode || 'Pilih Rute'}
                     </span>
@@ -542,6 +528,6 @@ export default function App() {
 
         </div>
       </div>
-    </div>
+    </>
   );
 }
