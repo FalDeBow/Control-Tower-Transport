@@ -20,25 +20,40 @@ ChartJS.register(
   LinearScale
 );
 
-// --- KOMPONEN ACCORDION (Hanya Tampil di Mobile berkat CSS Anda) ---
+// --- KOMPONEN ACCORDION (MOBILE) - PRESISI SEPERTI TABEL ---
 const RouteAccordion = ({ rute, badgeClass }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="accordion-item">
+    <div className="accordion-item" style={{ backdropFilter: 'blur(10px)', background: 'rgba(255,255,255,0.03)' }}>
       <div className="accordion-header" onClick={() => setIsOpen(!isOpen)}>
-        <span className="accordion-title" style={{ color: '#38bdf8', fontFamily: 'monospace', fontSize: '14px' }}>🚚 {rute.code}</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span className="accordion-title" style={{ color: '#38bdf8', fontFamily: 'monospace', fontSize: '14px', letterSpacing: '1px' }}>🚚 {rute.code}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '11px', color: '#cbd5e1' }}>Load: <strong style={{ color: '#38bdf8' }}>{rute.load}</strong></span>
           <span className={`badge ${badgeClass}`}>{rute.status}</span>
           <span style={{ fontSize: '10px', color: '#94a3b8' }}>{isOpen ? '▲' : '▼'}</span>
         </div>
       </div>
       {isOpen && (
-        <div className="accordion-body">
-          <div className="acc-detail-row"><span>Total Stop Points:</span><strong>{rute.points} Point</strong></div>
-          <div className="acc-detail-row"><span>Pure PU vs Drop:</span><strong>{rute.puDrop}</strong></div>
-          <div className="acc-detail-row"><span>SLA On-Time:</span><strong>{rute.sla}</strong></div>
-          <div className="acc-detail-row"><span>Rata-rata Delay:</span><strong>{rute.avgDelay}</strong></div>
+        <div className="accordion-body" style={{ background: 'rgba(0,0,0,0.3)', padding: '16px' }}>
+          {/* Layout Grid agar data rata kiri-kanan secara presisi */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>Total Stop</span>
+              <strong style={{ color: '#f8fafc' }}>{rute.points} Pts</strong>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>PU vs Drop</span>
+              <strong style={{ color: '#f8fafc' }}>{rute.puDrop}</strong>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
+              <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>SLA On-Time</span>
+              <strong style={{ color: '#34d399' }}>{rute.sla}</strong>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
+              <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>Avg Delay</span>
+              <strong style={{ color: '#f87171' }}>{rute.avgDelay}</strong>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -48,19 +63,30 @@ const RouteAccordion = ({ rute, badgeClass }: any) => {
 const PointAccordion = ({ point, badgeClass }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="accordion-item">
+    <div className="accordion-item" style={{ backdropFilter: 'blur(10px)', background: 'rgba(255,255,255,0.03)' }}>
       <div className="accordion-header" onClick={() => setIsOpen(!isOpen)}>
         <span className="accordion-title" style={{ color: '#38bdf8', fontFamily: 'monospace', fontSize: '14px', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📍 {point.name}</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span className={`badge ${badgeClass}`}>{point.visit}</span>
           <span style={{ fontSize: '10px', color: '#94a3b8' }}>{isOpen ? '▲' : '▼'}</span>
         </div>
       </div>
       {isOpen && (
-        <div className="accordion-body">
-          <div className="acc-detail-row"><span>Pure PU / Drop SS:</span><strong>{point.puDrop}</strong></div>
-          <div className="acc-detail-row"><span>Bagging MB & BP:</span><strong>{point.mbBp}</strong></div>
-          <div className="acc-detail-row"><span>Status Transaksi:</span><strong style={{ color: '#34d399' }}>{point.status}</strong></div>
+        <div className="accordion-body" style={{ background: 'rgba(0,0,0,0.3)', padding: '16px' }}>
+           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px', fontSize: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
+              <span style={{ color: '#94a3b8' }}>PU / Drop SS:</span>
+              <strong style={{ color: '#f8fafc' }}>{point.puDrop}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
+              <span style={{ color: '#94a3b8' }}>MB & BP:</span>
+              <strong style={{ color: '#fbbf24' }}>{point.mbBp}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ color: '#94a3b8' }}>Status:</span>
+              <strong style={{ color: '#34d399' }}>{point.status}</strong>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -76,14 +102,9 @@ export default function App() {
   const [pinSearchQuery, setPinSearchQuery] = useState('');
   const [mode, setMode] = useState('monthly');
   const [selectedDate, setSelectedDate] = useState('2026-08-26');
-  
-  // Mobile UI States
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
-  // GPS State
   const [selectedRouteCode, setSelectedRouteCode] = useState('');
 
-  // Clock
   const [time, setTime] = useState(new Date());
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -92,7 +113,6 @@ export default function App() {
   const timeString = time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const dateString = time.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
-  // Fetching Logic
   useEffect(() => {
     const fetchDashboardData = async () => {
       const cacheKey = `transport_glass_clean_${mode}_${selectedDate}`;
@@ -129,28 +149,21 @@ export default function App() {
     fetchDashboardData();
   }, [mode, selectedDate]);
 
-  // Filtering Data
   const filteredRoutes = dashboardData?.routeRows?.filter((r: any) => r.code.toLowerCase().includes(searchQuery.toLowerCase())) || [];
   const filteredPoints = dashboardData?.pointRows?.filter((p: any) => p.name.toLowerCase().includes(searchQuery.toLowerCase())) || [];
   
-  // FIX GPS: List Valid murni dari Data Dashboard Anda
   const validRouteCodes = dashboardData?.routeRows?.map((r: any) => r.code) || [];
   const filteredRouteCodes = validRouteCodes.filter((code: string) => code.toLowerCase().includes(pinSearchQuery.toLowerCase()));
 
   const getBadgeClass = (s: string) => !s ? 'badge-optimal' : s.includes('WARNING') ? 'badge-warning' : s.includes('CRITICAL') ? 'badge-critical' : 'badge-optimal';
 
-  // Helper Calendar CSS Asli
   const renderCalendar = () => {
     let days = [];
     for (let i = 26; i <= 31; i++) days.push(<div key={`prev-${i}`} className="cal-cell-mini other-month">{i}</div>);
     for (let d = 1; d <= 31; d++) {
       let dateStr = `2026-08-${d < 10 ? '0' + d : d}`;
       days.push(
-        <div
-          key={d}
-          className={`cal-cell-mini ${mode === 'daily' && dateStr === selectedDate ? 'selected' : ''}`}
-          onClick={() => { setMode('daily'); setSelectedDate(dateStr); }}
-        >
+        <div key={d} className={`cal-cell-mini ${mode === 'daily' && dateStr === selectedDate ? 'selected' : ''}`} onClick={() => { setMode('daily'); setSelectedDate(dateStr); }}>
           {d}
         </div>
       );
@@ -163,7 +176,6 @@ export default function App() {
     setIsMobileMenuOpen(false);
   };
 
-  // MOCKUP AUTO-SEARCH MAPS ENGINE
   const renderMapsUrl = () => {
     if (!selectedRouteCode) return '';
     const searchQueryMaps = encodeURIComponent(`${selectedRouteCode} Area Jakarta Indonesia`);
@@ -171,8 +183,27 @@ export default function App() {
   };
 
   return (
-    // Fragment (<>) digunakan agar struktur berhadapan langsung dengan #root di index.css Anda
     <>
+      {/* 
+        AMBIENT BACKGROUND (KUNCI LIQUID GLASS)
+        Ini akan diletakkan di layer paling belakang (z-index: -1) agar CSS asli Anda (Top Bar, Card Panel)
+        yang memiliki efek blur bisa menembus dan melihat warna-warna gradient ini.
+      */}
+      <style>{`
+        .ambient-bg {
+          position: fixed; inset: 0; z-index: -1;
+          background: radial-gradient(circle at 15% 30%, rgba(14, 165, 233, 0.15) 0%, transparent 40%),
+                      radial-gradient(circle at 85% 70%, rgba(16, 185, 129, 0.1) 0%, transparent 40%),
+                      #070c1b; /* Warna base index.css */
+        }
+        /* Penyesuaian agar CSS Panel asli Anda sedikit lebih transparan supaya efek kaca terasa */
+        .card-panel { background: rgba(17, 24, 39, 0.6) !important; backdrop-filter: blur(12px) !important; -webkit-backdrop-filter: blur(12px) !important; }
+        .sidebar { background: rgba(17, 24, 39, 0.6) !important; backdrop-filter: blur(16px) !important; -webkit-backdrop-filter: blur(16px) !important; }
+        .kpi-card { background: rgba(17, 24, 39, 0.6) !important; backdrop-filter: blur(12px) !important; }
+      `}</style>
+
+      <div className="ambient-bg"></div>
+
       {isLoading && (
         <div id="loaderOverlay">
           <div className="spinner"></div>
@@ -182,21 +213,17 @@ export default function App() {
         </div>
       )}
 
-      {/* OVERLAY MOBILE CSS ASLI */}
-      <div
-        className={`mobile-overlay ${isMobileMenuOpen ? 'open' : ''}`}
-        onClick={() => setIsMobileMenuOpen(false)}
-      ></div>
+      <div className={`mobile-overlay ${isMobileMenuOpen ? 'open' : ''}`} onClick={() => setIsMobileMenuOpen(false)}></div>
 
-      {/* SIDEBAR CSS ASLI */}
       <div className={`sidebar ${isMobileMenuOpen ? 'open' : ''}`}>
         <h2>
-          {/* Logo Box Transparan */}
-          <svg style={{ width: '22px', height: '22px', color: 'var(--app-accent)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+          {/* ICON BARU: Kotak Logistik Isometric Transparan */}
+          <svg style={{ width: '24px', height: '24px', color: 'var(--app-accent)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
             <path strokeLinecap="round" strokeLinejoin="round" d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 22.08V12" />
           </svg>
-          <span style={{ marginLeft: '8px', flex: 1 }}>TR-GLASS</span>
+          <span style={{ marginLeft: '8px', flex: 1, letterSpacing: '1.5px' }}>TR-GLASS</span>
         </h2>
 
         <div className="nav-menu">
@@ -207,9 +234,7 @@ export default function App() {
         </div>
 
         <div style={{ marginTop: 'auto' }}>
-          <label style={{ fontSize: '10px', color: 'var(--app-muted)', fontWeight: 700, display: 'block', marginBottom: '8px', letterSpacing: '0.5px' }}>
-            📅 PERIODE ANALISIS
-          </label>
+          <label style={{ fontSize: '10px', color: 'var(--app-muted)', fontWeight: 700, display: 'block', marginBottom: '8px', letterSpacing: '0.5px' }}>📅 PERIODE ANALISIS</label>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
             <button className={`mode-btn ${mode === 'monthly' ? 'active' : ''}`} onClick={() => setMode('monthly')}>📈 Bulanan</button>
             <button className={`mode-btn ${mode === 'daily' ? 'active' : ''}`}>📅 Harian</button>
@@ -217,24 +242,18 @@ export default function App() {
           <div className="sidebar-calendar">
             <div className="cal-header-mini">
               <span>Agustus 2026</span>
-              <span style={{ fontSize: '9px', cursor: 'pointer', background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px' }} onClick={() => setMode('monthly')}>
-                Reset
-              </span>
+              <span style={{ fontSize: '9px', cursor: 'pointer', background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px' }} onClick={() => setMode('monthly')}>Reset</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center' }}>
-              {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map((hari) => (
-                <div key={hari} className="cal-day-lbl">{hari}</div>
-              ))}
+              {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map((hari) => <div key={hari} className="cal-day-lbl">{hari}</div>)}
               {renderCalendar()}
             </div>
           </div>
         </div>
       </div>
 
-      {/* MAIN CONTENT CSS ASLI - Saya tambahkan anti-aliased untuk Liquid Glass Teks Blur */}
       <div className="main-content" style={{ WebkitFontSmoothing: 'antialiased' }}>
         
-        {/* TOP BAR LIQUID GLASS CSS ASLI */}
         <div className="top-bar">
           <div className="brand-container">
             <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(true)}>☰</button>
@@ -247,13 +266,7 @@ export default function App() {
 
           <div className="global-search-container">
             <span className="global-search-icon">🔍</span>
-            <input
-              type="text"
-              className="global-search"
-              placeholder="Cari rute, point..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            <input type="text" className="global-search" placeholder="Cari rute, point..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
 
           <div className="top-bar-right">
@@ -272,10 +285,8 @@ export default function App() {
           </div>
         </div>
 
-        {/* DASHBOARD CONTAINER CSS ASLI */}
         <div className="dashboard-container">
           
-          {/* KPI GRID CSS ASLI */}
           <div className="kpi-grid">
             <div className="kpi-card"><div className="title">Total Trip</div><div className="value">{dashboardData?.kpi?.tripCount || '0'}</div><div className="subtext">Unit Aktif</div></div>
             <div className="kpi-card"><div className="title">Pure Pick-Up</div><div className="value">{dashboardData?.kpi?.totalPurePU || '0'}</div><div className="subtext">Pengambilan</div></div>
@@ -285,20 +296,13 @@ export default function App() {
             <div className="kpi-card"><div className="title">Real Load Factor</div><div className="value">{dashboardData?.kpi?.overallLoadPct || '0'}%</div><div className="subtext">Eq-PU Volume</div></div>
           </div>
 
-          {/* MENU 1: OVERVIEW */}
           {activeMenu === 'overview' && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
               <div className="card-panel">
                 <div className="panel-header"><h3>🍰 Distribusi Workload</h3></div>
                 {dashboardData?.chartData ? (
                   <div style={{ position: 'relative', width: '100%', height: '240px' }}>
-                    <Doughnut
-                      data={{
-                        labels: dashboardData.chartData.labels,
-                        datasets: [{ data: dashboardData.chartData.workloads, backgroundColor: ['#0ea5e9', '#38bdf8', '#f59e0b', '#10b981', '#6366f1', '#ec4899'], borderWidth: 0 }]
-                      }}
-                      options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1' } } } }}
-                    />
+                    <Doughnut data={{ labels: dashboardData.chartData.labels, datasets: [{ data: dashboardData.chartData.workloads, backgroundColor: ['#0ea5e9', '#38bdf8', '#f59e0b', '#10b981', '#6366f1', '#ec4899'], borderWidth: 0 }] }} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1' } } } }} />
                   </div>
                 ) : <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Loading grafik...</p>}
               </div>
@@ -307,40 +311,21 @@ export default function App() {
                 <div className="panel-header"><h3>📈 SLA On-Time (%)</h3></div>
                 {dashboardData?.chartData ? (
                   <div style={{ position: 'relative', width: '100%', height: '240px' }}>
-                    <Bar
-                      data={{
-                        labels: dashboardData.chartData.labels,
-                        datasets: [{ label: 'SLA (%)', data: dashboardData.chartData.slas, backgroundColor: '#0ea5e9', borderRadius: 4 }]
-                      }}
-                      options={{
-                        responsive: true, maintainAspectRatio: false,
-                        scales: {
-                          y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#cbd5e1' } },
-                          x: { grid: { display: false }, ticks: { color: '#cbd5e1' } }
-                        },
-                        plugins: { legend: { display: false } }
-                      }}
-                    />
+                    <Bar data={{ labels: dashboardData.chartData.labels, datasets: [{ label: 'SLA (%)', data: dashboardData.chartData.slas, backgroundColor: '#0ea5e9', borderRadius: 4 }] }} options={{ responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#cbd5e1' } }, x: { grid: { display: false }, ticks: { color: '#cbd5e1' } } }, plugins: { legend: { display: false } } }} />
                   </div>
                 ) : <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Loading grafik...</p>}
               </div>
             </div>
           )}
 
-          {/* MENU 2: LOAD & SLA */}
           {activeMenu === 'routes' && (
             <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
-              <div className="panel-header" style={{ padding: '20px 20px 0 20px' }}>
-                <h3>🚚 Load & SLA per Rute</h3>
-              </div>
+              <div className="panel-header" style={{ padding: '20px 20px 0 20px' }}><h3>🚚 Load & SLA per Rute</h3></div>
               
-              {/* Tambahan overflowX auto agar scroll rapi */}
               <div style={{ overflowX: 'auto', padding: '0 20px 20px 20px' }}>
                 <table className="desktop-table-view" style={{ width: '100%', minWidth: '700px', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr>
-                      <th>RUTE</th><th>POINT</th><th>PURE PU/DROP</th><th>SLA %</th><th>AVG DELAY</th><th>NET LOAD %</th><th>STATUS</th>
-                    </tr>
+                    <tr><th>RUTE</th><th>POINT</th><th>PURE PU/DROP</th><th>SLA %</th><th>AVG DELAY</th><th>NET LOAD %</th><th>STATUS</th></tr>
                   </thead>
                   <tbody>
                     {filteredRoutes.map((r: any, i: number) => (
@@ -351,32 +336,23 @@ export default function App() {
                         <td><span className={`badge ${getBadgeClass(r.status)}`}>{r.status}</span></td>
                       </tr>
                     ))}
-                    {filteredRoutes.length === 0 && (
-                      <tr><td colSpan={7} style={{ textAlign: 'center', padding: '16px', color: 'var(--app-muted)' }}>Data rute tidak ditemukan</td></tr>
-                    )}
+                    {filteredRoutes.length === 0 && (<tr><td colSpan={7} style={{ textAlign: 'center', padding: '16px', color: 'var(--app-muted)' }}>Data rute tidak ditemukan</td></tr>)}
                   </tbody>
                 </table>
                 <div className="mobile-accordion-list">
-                  {filteredRoutes.map((r: any, i: number) => (
-                    <RouteAccordion key={i} rute={r} badgeClass={getBadgeClass(r.status)} />
-                  ))}
+                  {filteredRoutes.map((r: any, i: number) => <RouteAccordion key={i} rute={r} badgeClass={getBadgeClass(r.status)} />)}
                 </div>
               </div>
             </div>
           )}
 
-          {/* MENU 3: INFO POINT TASK */}
           {activeMenu === 'points' && (
             <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
-              <div className="panel-header" style={{ padding: '20px 20px 0 20px' }}>
-                <h3>📍 Info Point Task</h3>
-              </div>
+              <div className="panel-header" style={{ padding: '20px 20px 0 20px' }}><h3>📍 Info Point Task</h3></div>
               <div style={{ overflowX: 'auto', padding: '0 20px 20px 20px' }}>
                 <table className="desktop-table-view" style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr>
-                      <th>NAMA POINT</th><th>VISIT</th><th>PURE PU/DROP</th><th>MB & BP DETAIL</th><th>STATUS</th>
-                    </tr>
+                    <tr><th>NAMA POINT</th><th>VISIT</th><th>PURE PU/DROP</th><th>MB & BP DETAIL</th><th>STATUS</th></tr>
                   </thead>
                   <tbody>
                     {filteredPoints.map((p: any, i: number) => (
@@ -386,56 +362,31 @@ export default function App() {
                         <td><span className={`badge ${getBadgeClass(p.status)}`}>{p.status}</span></td>
                       </tr>
                     ))}
-                    {filteredPoints.length === 0 && (
-                      <tr><td colSpan={5} style={{ textAlign: 'center', padding: '16px', color: 'var(--app-muted)' }}>Data point tidak ditemukan</td></tr>
-                    )}
+                    {filteredPoints.length === 0 && (<tr><td colSpan={5} style={{ textAlign: 'center', padding: '16px', color: 'var(--app-muted)' }}>Data point tidak ditemukan</td></tr>)}
                   </tbody>
                 </table>
                 <div className="mobile-accordion-list">
-                  {filteredPoints.map((p: any, i: number) => (
-                    <PointAccordion key={i} point={p} badgeClass={getBadgeClass(p.status)} />
-                  ))}
+                  {filteredPoints.map((p: any, i: number) => <PointAccordion key={i} point={p} badgeClass={getBadgeClass(p.status)} />)}
                 </div>
               </div>
             </div>
           )}
 
-          {/* MENU 4: GPS PINPOINT HISTORY (MURNI DATA BASE) */}
           {activeMenu === 'geotag' && (
             <div className="card-panel">
               <div className="panel-header" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                 <h3>🗺️ History Jalur Maps per Rute</h3>
-                <input
-                  type="text"
-                  placeholder="Cari Kode Rute..."
-                  value={pinSearchQuery}
-                  onChange={(e) => setPinSearchQuery(e.target.value)}
-                  style={{
-                    padding: '8px 12px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: '#fff',
-                    fontSize: '11px', outline: 'none', width: '100%', maxWidth: '240px', fontFamily: 'monospace'
-                  }}
-                />
+                <input type="text" placeholder="Cari Kode Rute..." value={pinSearchQuery} onChange={(e) => setPinSearchQuery(e.target.value)} style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: '#fff', fontSize: '11px', outline: 'none', width: '100%', maxWidth: '240px', fontFamily: 'monospace' }} />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginTop: '16px' }}>
-                {/* List Rute */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '420px', overflowY: 'auto', paddingRight: '6px' }}>
                   {filteredRouteCodes.map((code: string) => {
                     const isSelected = selectedRouteCode === code;
                     const routeItem = dashboardData?.routeRows?.find((r: any) => r.code === code);
                     return (
-                      <div
-                        key={code}
-                        onClick={() => setSelectedRouteCode(code)}
-                        style={{
-                          padding: '14px', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.2s',
-                          border: isSelected ? '1px solid var(--app-accent)' : '1px solid rgba(255,255,255,0.05)',
-                          background: isSelected ? 'rgba(56, 189, 248, 0.12)' : 'rgba(0,0,0,0.2)'
-                        }}
-                      >
-                        <div style={{ color: isSelected ? 'var(--app-accent)' : '#e2e8f0', fontWeight: 'bold', fontSize: '12px', fontFamily: 'monospace', marginBottom: '4px' }}>
-                          🚚 {code}
-                        </div>
+                      <div key={code} onClick={() => setSelectedRouteCode(code)} style={{ padding: '14px', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.2s', border: isSelected ? '1px solid var(--app-accent)' : '1px solid rgba(255,255,255,0.05)', background: isSelected ? 'rgba(56, 189, 248, 0.12)' : 'rgba(0,0,0,0.2)' }}>
+                        <div style={{ color: isSelected ? 'var(--app-accent)' : '#e2e8f0', fontWeight: 'bold', fontSize: '12px', fontFamily: 'monospace', marginBottom: '4px' }}>🚚 {code}</div>
                         <div style={{ fontSize: '10px', color: 'var(--app-muted)', display: 'flex', justifyContent: 'space-between' }}>
                           <span>Total Stop Points: {routeItem?.points || '0'} Point</span>
                           <span style={{ color: routeItem?.status?.includes('WARNING') ? '#fbbf24' : '#34d399', fontWeight: 'bold' }}>{routeItem?.status || 'Optimal'}</span>
@@ -443,32 +394,18 @@ export default function App() {
                       </div>
                     );
                   })}
-                  {filteredRouteCodes.length === 0 && (
-                    <div style={{ padding: '20px', textAlign: 'center', color: 'var(--app-muted)', fontSize: '11px', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '8px' }}>
-                      Kode rute tidak ditemukan dalam sistem.
-                    </div>
-                  )}
+                  {filteredRouteCodes.length === 0 && (<div style={{ padding: '20px', textAlign: 'center', color: 'var(--app-muted)', fontSize: '11px', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '8px' }}>Kode rute tidak ditemukan dalam sistem.</div>)}
                 </div>
 
-                {/* Container Iframe Maps */}
                 <div style={{ border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', overflow: 'hidden', height: '420px', background: 'rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ padding: '12px 16px', background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: 'var(--app-accent)', fontSize: '11px', fontWeight: 'bold', fontFamily: 'monospace' }}>
-                      🎯 Rute Terpilih: {selectedRouteCode || 'Pilih Rute'}
-                    </span>
+                    <span style={{ color: 'var(--app-accent)', fontSize: '11px', fontWeight: 'bold', fontFamily: 'monospace' }}>🎯 Rute Terpilih: {selectedRouteCode || 'Pilih Rute'}</span>
                     <span style={{ fontSize: '9px', background: 'rgba(0,0,0,0.5)', padding: '4px 8px', borderRadius: '4px', color: 'var(--app-muted)', letterSpacing: '0.5px' }}>Auto-Search Engine</span>
                   </div>
                   <div style={{ flex: 1, width: '100%', position: 'relative' }}>
                     {selectedRouteCode ? (
-                      <iframe
-                        width="100%" height="100%" style={{ border: 0, position: 'absolute', top: 0, left: 0 }}
-                        allowFullScreen loading="lazy" src={renderMapsUrl()}
-                      ></iframe>
-                    ) : (
-                      <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: '12px' }}>
-                        Pilih rute untuk melihat Maps
-                      </div>
-                    )}
+                      <iframe width="100%" height="100%" style={{ border: 0, position: 'absolute', top: 0, left: 0 }} allowFullScreen loading="lazy" src={renderMapsUrl()}></iframe>
+                    ) : (<div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: '12px' }}>Pilih rute untuk melihat Maps</div>)}
                   </div>
                 </div>
               </div>
