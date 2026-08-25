@@ -9,6 +9,7 @@ import {
   LinearScale,
 } from 'chart.js';
 import { Doughnut, Bar } from 'react-chartjs-2';
+import './index.css';
 
 ChartJS.register(
   ArcElement,
@@ -19,60 +20,75 @@ ChartJS.register(
   LinearScale
 );
 
-// --- KOMPONEN ACCORDION (MOBILE) ---
+// KOMPONEN ACCORDION RUTE (MOBILE)
 const RouteAccordion = ({ rute, badgeClass }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="mb-3 rounded-lg border border-white/10 bg-white/5 overflow-hidden transition-all duration-300">
-      <div 
-        className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/5"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <span className="font-mono text-sm text-sky-400 font-bold tracking-wider">🚚 {rute.code}</span>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-slate-300">Load: <strong className="text-sky-400">{rute.load}</strong></span>
-          <span className={`px-2 py-1 text-[10px] rounded-full uppercase tracking-wider font-bold ${badgeClass}`}>{rute.status}</span>
-          <span className="text-[10px] text-slate-400">{isOpen ? '▲' : '▼'}</span>
-        </div>
+    <div className="accordion-item">
+      <div className="accordion-header" onClick={() => setIsOpen(!isOpen)}>
+        <span className="accordion-title">🚚 {rute.code}</span>
+        <span className="accordion-metrics">
+          <span>Load: <strong style={{ color: '#38bdf8' }}>{rute.load}</strong></span>
+          <span className={`badge ${badgeClass}`}>{rute.status}</span>
+          <span style={{ fontSize: '10px', marginLeft: '4px' }}>{isOpen ? '▲' : '▼'}</span>
+        </span>
       </div>
       {isOpen && (
-        <div className="p-4 border-t border-white/5 bg-black/20 text-xs text-slate-300 space-y-2">
-          <div className="flex justify-between"><span>Total Stop Points:</span><strong className="text-white">{rute.points} Point</strong></div>
-          <div className="flex justify-between"><span>Pure PU vs Drop:</span><strong className="text-white">{rute.puDrop}</strong></div>
-          <div className="flex justify-between"><span>SLA On-Time:</span><strong className="text-white">{rute.sla}</strong></div>
-          <div className="flex justify-between"><span>Rata-rata Delay:</span><strong className="text-white">{rute.avgDelay}</strong></div>
+        <div className="accordion-body">
+          <div className="acc-detail-row">
+            <span>Total Stop Points:</span>
+            <strong>{rute.points} Point</strong>
+          </div>
+          <div className="acc-detail-row">
+            <span>Pure PU vs Drop:</span>
+            <strong>{rute.puDrop}</strong>
+          </div>
+          <div className="acc-detail-row">
+            <span>SLA On-Time:</span>
+            <strong>{rute.sla}</strong>
+          </div>
+          <div className="acc-detail-row">
+            <span>Rata-rata Delay:</span>
+            <strong>{rute.avgDelay}</strong>
+          </div>
         </div>
       )}
     </div>
   );
 };
 
+// KOMPONEN ACCORDION POINT (MOBILE)
 const PointAccordion = ({ point, badgeClass }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="mb-3 rounded-lg border border-white/10 bg-white/5 overflow-hidden transition-all duration-300">
-      <div 
-        className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/5"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <span className="font-mono text-sm text-sky-400 font-bold tracking-wider truncate w-32">📍 {point.name}</span>
-        <div className="flex items-center gap-3">
-          <span className={`px-2 py-1 text-[10px] rounded-full uppercase tracking-wider font-bold ${badgeClass}`}>{point.visit}</span>
-          <span className="text-[10px] text-slate-400">{isOpen ? '▲' : '▼'}</span>
-        </div>
+    <div className="accordion-item">
+      <div className="accordion-header" onClick={() => setIsOpen(!isOpen)}>
+        <span className="accordion-title">📍 {point.name}</span>
+        <span className="accordion-metrics">
+          <span className={`badge ${badgeClass}`}>{point.visit}</span>
+          <span style={{ fontSize: '10px', marginLeft: '4px' }}>{isOpen ? '▲' : '▼'}</span>
+        </span>
       </div>
       {isOpen && (
-        <div className="p-4 border-t border-white/5 bg-black/20 text-xs text-slate-300 space-y-2">
-          <div className="flex justify-between"><span>Pure PU / Drop SS:</span><strong className="text-white">{point.puDrop}</strong></div>
-          <div className="flex justify-between"><span>Bagging MB & BP:</span><strong className="text-white">{point.mbBp}</strong></div>
-          <div className="flex justify-between"><span>Status Transaksi:</span><strong className="text-emerald-400">{point.status}</strong></div>
+        <div className="accordion-body">
+          <div className="acc-detail-row">
+            <span>Pure PU / Drop SS:</span>
+            <strong>{point.puDrop}</strong>
+          </div>
+          <div className="acc-detail-row">
+            <span>Bagging MB & BP:</span>
+            <strong>{point.mbBp}</strong>
+          </div>
+          <div className="acc-detail-row">
+            <span>Status Transaksi:</span>
+            <strong style={{ color: '#34d399' }}>{point.status}</strong>
+          </div>
         </div>
       )}
     </div>
   );
 };
 
-// --- APP COMPONENT ---
 export default function App() {
   const [activeMenu, setActiveMenu] = useState('overview');
   const [dashboardData, setDashboardData] = useState<any>(null);
@@ -84,9 +100,9 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState('2026-08-23');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
+  // State GPS
   const [selectedRouteCode, setSelectedRouteCode] = useState('');
 
-  // Clock state
   const [time, setTime] = useState(new Date());
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -95,12 +111,10 @@ export default function App() {
   const timeString = time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const dateString = time.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
-  // Data Fetching
   useEffect(() => {
     const fetchDashboardData = async () => {
       const cacheKey = `transport_glass_clean_${mode}_${selectedDate}`;
       const cachedData = localStorage.getItem(cacheKey);
-      
       if (cachedData) {
         const parsed = JSON.parse(cachedData);
         setDashboardData(parsed);
@@ -133,362 +147,393 @@ export default function App() {
     fetchDashboardData();
   }, [mode, selectedDate]);
 
-  // Filtering Data
   const filteredRoutes = dashboardData?.routeRows?.filter((r: any) => r.code.toLowerCase().includes(searchQuery.toLowerCase())) || [];
   const filteredPoints = dashboardData?.pointRows?.filter((p: any) => p.name.toLowerCase().includes(searchQuery.toLowerCase())) || [];
   
+  // FIX Logika Rute GPS
   const validRouteCodes = dashboardData?.routeRows?.map((r: any) => r.code) || [];
   const filteredRouteCodes = validRouteCodes.filter((code: string) => code.toLowerCase().includes(pinSearchQuery.toLowerCase()));
 
-  // Utility Style Helper
-  const getBadgeClass = (s: string) => {
-    if (!s) return 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
-    if (s.includes('WARNING')) return 'bg-amber-500/20 text-amber-400 border border-amber-500/30';
-    if (s.includes('CRITICAL')) return 'bg-rose-500/20 text-rose-400 border border-rose-500/30';
-    return 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+  const getBadgeClass = (s: string) => !s ? 'badge-optimal' : s.includes('WARNING') ? 'badge-warning' : s.includes('CRITICAL') ? 'badge-critical' : 'badge-optimal';
+
+  const renderCalendar = () => {
+    let days = [];
+    for (let i = 26; i <= 31; i++) days.push(<div key={`prev-${i}`} className="cal-cell-mini other-month">{i}</div>);
+    for (let d = 1; d <= 31; d++) {
+      let dateStr = `2026-08-${d < 10 ? '0' + d : d}`;
+      days.push(
+        <div
+          key={d}
+          className={`cal-cell-mini ${mode === 'daily' && dateStr === selectedDate ? 'selected' : ''}`}
+          onClick={() => { setMode('daily'); setSelectedDate(dateStr); }}
+        >
+          {d}
+        </div>
+      );
+    }
+    return days;
   };
 
-  // 🌍 MOCKUP PETA PINTAR (Tanpa API Key Berbayar)
+  const handleMenuClick = (menu: string) => {
+    setActiveMenu(menu);
+    setIsMobileMenuOpen(false);
+  };
+
+  // MOCKUP AUTO-SEARCH MAPS
   const renderMapsUrl = () => {
     if (!selectedRouteCode) return '';
-    // Logika: Mengambil kode rute dan memaksanya mencari area di Indonesia. 
-    // Anda bisa menyesuaikan kata "Area Jakarta" menjadi provinsi/kota lain jika rutenya spesifik.
     const searchQueryMaps = encodeURIComponent(`${selectedRouteCode} Area Jakarta Indonesia`);
     return `https://maps.google.com/maps?q=${searchQueryMaps}&z=13&output=embed`;
   };
 
   return (
-    <div className="relative flex flex-col md:flex-row w-full min-h-[100dvh] bg-slate-950 font-sans antialiased text-slate-200 overflow-hidden">
+    // FIX PWA & KETAJAMAN TEXT: Menggunakan antialiased (WebkitFontSmoothing) dan 100dvh
+    <div style={{ minHeight: '100dvh', WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale', overflowX: 'hidden' }}>
       
-      {/* Background Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-sky-950 to-slate-950 pointer-events-none z-0"></div>
+      {isLoading && (
+        <div id="loaderOverlay">
+          <div className="spinner"></div>
+          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--app-accent)', letterSpacing: '2px' }}>
+            SINKRONISASI DATA
+          </div>
+        </div>
+      )}
 
-      {/* --- SIDEBAR --- */}
-      <div className={`fixed md:relative z-40 flex flex-col w-64 h-[100dvh] transition-transform duration-300 backdrop-blur-xl bg-slate-900/60 border-r border-white/10 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
-        
-        {/* Sidebar Header dengan ICON BARU */}
-        <div className="p-6 border-b border-white/10">
-          <h2 className="text-xl font-black tracking-widest bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-emerald-400 flex items-center gap-2">
-            {/* SVG Logo: Kotak Logistik Kaca/Transparan */}
-            <svg className="w-7 h-7 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12" />
-            </svg>
-            TR-GLASS
-          </h2>
+      <div
+        className={`mobile-overlay ${isMobileMenuOpen ? 'open' : ''}`}
+        onClick={() => setIsMobileMenuOpen(false)}
+      ></div>
+
+      {/* SIDEBAR */}
+      <div className={`sidebar ${isMobileMenuOpen ? 'open' : ''}`}>
+        <h2>
+          {/* FIX SVG LOGO: Ukuran dikunci dengan inline style */}
+          <svg style={{ width: '24px', height: '24px', color: '#38bdf8', marginRight: '8px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12" />
+          </svg>
+          <span>TR-GLASS</span>
+        </h2>
+
+        <div className="nav-menu">
+          <div className={`nav-item ${activeMenu === 'overview' ? 'active' : ''}`} onClick={() => handleMenuClick('overview')}>
+            📊 Dashboard Overview
+          </div>
+          <div className={`nav-item ${activeMenu === 'routes' ? 'active' : ''}`} onClick={() => handleMenuClick('routes')}>
+            🚚 Load & SLA
+          </div>
+          <div className={`nav-item ${activeMenu === 'points' ? 'active' : ''}`} onClick={() => handleMenuClick('points')}>
+            📍 Info Point Task
+          </div>
+          <div className={`nav-item ${activeMenu === 'geotag' ? 'active' : ''}`} onClick={() => handleMenuClick('geotag')}>
+            🗺️ GPS History
+          </div>
         </div>
 
-        {/* Sidebar Navigation */}
-        <div className="flex flex-col gap-2 p-4 flex-grow overflow-y-auto">
-          {[
-            { id: 'overview', icon: '📊', label: 'Dashboard Overview' },
-            { id: 'routes', icon: '🚚', label: 'Load & SLA' },
-            { id: 'points', icon: '📍', label: 'Info Point Task' },
-            { id: 'geotag', icon: '🗺️', label: 'GPS History' },
-          ].map((menu) => (
-            <button
-              key={menu.id}
-              onClick={() => { setActiveMenu(menu.id); setIsMobileMenuOpen(false); }}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${activeMenu === menu.id ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30 shadow-[0_0_15px_rgba(14,165,233,0.15)]' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'}`}
-            >
-              <span>{menu.icon}</span>
-              {menu.label}
-            </button>
-          ))}
+        <div style={{ marginTop: 'auto' }}>
+          <label style={{ fontSize: '10px', color: 'var(--app-muted)', fontWeight: 700, display: 'block', marginBottom: '8px', letterSpacing: '0.5px' }}>
+            📅 PERIODE ANALISIS
+          </label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
+            <button className={`mode-btn ${mode === 'monthly' ? 'active' : ''}`} onClick={() => setMode('monthly')}>📈 Bulanan</button>
+            <button className={`mode-btn ${mode === 'daily' ? 'active' : ''}`}>📅 Harian</button>
+          </div>
+          <div className="sidebar-calendar">
+            <div className="cal-header-mini">
+              <span>Agustus 2026</span>
+              <span style={{ fontSize: '9px', cursor: 'pointer', background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px' }} onClick={() => setMode('monthly')}>
+                Reset
+              </span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center' }}>
+              {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map((hari) => (
+                <div key={hari} className="cal-day-lbl">{hari}</div>
+              ))}
+              {renderCalendar()}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Overlay Mobile */}
-      {isMobileMenuOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 md:hidden" onClick={() => setIsMobileMenuOpen(false)}></div>
-      )}
-
-      {/* --- MAIN CONTENT --- */}
-      <div className="relative z-10 flex flex-col flex-1 h-[100dvh] overflow-hidden">
+      {/* MAIN CONTENT */}
+      <div className="main-content">
         
-        {/* Top Header */}
-        <div className="flex items-center justify-between p-4 md:px-8 border-b border-white/10 backdrop-blur-xl bg-slate-900/40">
-          
-          <div className="flex items-center gap-4">
-            <button className="md:hidden p-2 text-slate-400" onClick={() => setIsMobileMenuOpen(true)}>☰</button>
-            <div className="hidden md:flex flex-col">
-              <span className="text-xs font-bold text-sky-400 tracking-widest flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                SERVER: PROD-JKT
-              </span>
+        {/* TOP BAR */}
+        <div className="top-bar">
+          <div className="brand-container">
+            <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(true)}>☰</button>
+            <div className="pulse-dot"></div>
+            <div className="brand-text">
+              <h1>TRANSPORT <span>GLASS</span></h1>
+              <span className="brand-sub">SERVER: PROD-JKT // SYNC-OK</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="hidden md:block relative">
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-64 py-2 pl-10 pr-4 rounded-full bg-white/5 border border-white/10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors"
-              />
-              <span className="absolute left-3 top-2.5 text-slate-500">🔍</span>
+          <div className="global-search-container">
+            <span className="global-search-icon">🔍</span>
+            <input
+              type="text"
+              className="global-search"
+              placeholder="Cari rute, point..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <div className="top-bar-right">
+            <div className="ops-clock">
+              <span className="time">{timeString} WIB</span>
+              <span className="date">{dateString}</span>
             </div>
-            
-            <div className="flex flex-col text-right hidden sm:flex">
-              <span className="text-sm font-mono text-sky-400">{timeString}</span>
-              <span className="text-[10px] text-slate-500 font-bold uppercase">{dateString}</span>
-            </div>
-            
-            <div className="flex items-center gap-3 pl-4 border-l border-white/10">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-xs font-bold shadow-lg shadow-sky-500/20">
-                GB
+            <div className="action-btn">🔔<div className="notif-badge">3</div></div>
+            <div className="user-profile">
+              <div className="avatar">GB</div>
+              <div className="user-info">
+                <span className="name">Gwe Bowo</span>
+                <span className="role">Control Tower Ops</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* --- DASHBOARD VIEW AREA --- */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-8">
+        {/* DASHBOARD CONTAINER */}
+        <div className="dashboard-container">
           
-          <div className="max-w-7xl mx-auto space-y-6">
-            
-            {/* KPI Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {[
-                { label: 'Total Trip', val: dashboardData?.kpi?.tripCount, sub: 'Unit Aktif' },
-                { label: 'Pure PU', val: dashboardData?.kpi?.totalPurePU, sub: 'Pengambilan' },
-                { label: 'Pure Drop', val: dashboardData?.kpi?.totalPureDrop, sub: 'Penurunan' },
-                { label: 'Workload', val: dashboardData?.kpi?.totalWorkloadEffort, sub: 'Point Visit' },
-                { label: 'SLA Time', val: `${dashboardData?.kpi?.overallSlaPct || 0}%`, sub: 'No Delay' },
-                { label: 'Load Factor', val: `${dashboardData?.kpi?.overallLoadPct || 0}%`, sub: 'Volume Eq' },
-              ].map((kpi, idx) => (
-                <div key={idx} className="relative p-4 rounded-2xl backdrop-blur-xl bg-white/5 border border-white/10 overflow-hidden group hover:bg-white/10 transition-colors">
-                  <div className="relative z-10">
-                    <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">{kpi.label}</p>
-                    <p className="text-2xl font-black text-white mt-1 mb-1 tracking-tight">{kpi.val || '0'}</p>
-                    <p className="text-[10px] text-sky-400">{kpi.sub}</p>
+          {/* KPI GRID */}
+          <div className="kpi-grid">
+            <div className="kpi-card"><div className="title">Total Trip</div><div className="value">{dashboardData?.kpi?.tripCount || '0'}</div><div className="subtext">Unit Aktif</div></div>
+            <div className="kpi-card"><div className="title">Pure Pick-Up</div><div className="value">{dashboardData?.kpi?.totalPurePU || '0'}</div><div className="subtext">Pengambilan</div></div>
+            <div className="kpi-card"><div className="title">Pure Drop SS</div><div className="value">{dashboardData?.kpi?.totalPureDrop || '0'}</div><div className="subtext">Penurunan</div></div>
+            <div className="kpi-card"><div className="title">Total Workload</div><div className="value">{dashboardData?.kpi?.totalWorkloadEffort || '0'}</div><div className="subtext">Points Visit</div></div>
+            <div className="kpi-card"><div className="title">SLA On-Time</div><div className="value">{dashboardData?.kpi?.overallSlaPct || '0'}%</div><div className="subtext">Aman (No Delay)</div></div>
+            <div className="kpi-card"><div className="title">Real Load Factor</div><div className="value">{dashboardData?.kpi?.overallLoadPct || '0'}%</div><div className="subtext">Eq-PU Volume</div></div>
+          </div>
+
+          {/* 1. OVERVIEW */}
+          {activeMenu === 'overview' && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(0, 1fr))', gap: '16px' }}>
+              <div className="card-panel">
+                <div className="panel-header"><h3>🍰 Distribusi Workload</h3></div>
+                {dashboardData?.chartData ? (
+                  <div style={{ position: 'relative', width: '100%', height: '240px' }}>
+                    <Doughnut
+                      data={{
+                        labels: dashboardData.chartData.labels,
+                        datasets: [{ data: dashboardData.chartData.workloads, backgroundColor: ['#0ea5e9', '#38bdf8', '#f59e0b', '#10b981', '#6366f1', '#ec4899'], borderWidth: 0 }]
+                      }}
+                      options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1' } } } }}
+                    />
                   </div>
-                </div>
-              ))}
+                ) : <p style={{ fontSize: '11px', color: '#94a3b8' }}>Loading grafik...</p>}
+              </div>
+
+              <div className="card-panel">
+                <div className="panel-header"><h3>📈 SLA On-Time (%)</h3></div>
+                {dashboardData?.chartData ? (
+                  <div style={{ position: 'relative', width: '100%', height: '240px' }}>
+                    <Bar
+                      data={{
+                        labels: dashboardData.chartData.labels,
+                        datasets: [{ label: 'SLA (%)', data: dashboardData.chartData.slas, backgroundColor: '#0ea5e9', borderRadius: 4 }]
+                      }}
+                      options={{
+                        responsive: true, maintainAspectRatio: false,
+                        scales: {
+                          y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#cbd5e1' } },
+                          x: { grid: { display: false }, ticks: { color: '#cbd5e1' } }
+                        },
+                        plugins: { legend: { display: false } }
+                      }}
+                    />
+                  </div>
+                ) : <p style={{ fontSize: '11px', color: '#94a3b8' }}>Loading grafik...</p>}
+              </div>
             </div>
+          )}
 
-            {/* Menu: OVERVIEW */}
-            {activeMenu === 'overview' && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="p-6 rounded-2xl backdrop-blur-xl bg-white/5 border border-white/10">
-                  <h3 className="text-sm font-bold text-slate-200 mb-6 flex items-center gap-2"><span>🍰</span> Distribusi Workload</h3>
-                  {dashboardData?.chartData ? (
-                    <div className="h-64 relative">
-                      <Doughnut
-                        data={{
-                          labels: dashboardData.chartData.labels,
-                          datasets: [{ data: dashboardData.chartData.workloads, backgroundColor: ['#0ea5e9', '#38bdf8', '#f59e0b', '#10b981', '#6366f1', '#ec4899'], borderWidth: 0 }]
-                        }}
-                        options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1' } } } }}
-                      />
-                    </div>
-                  ) : <p className="text-xs text-slate-500">Loading grafik...</p>}
-                </div>
-                <div className="p-6 rounded-2xl backdrop-blur-xl bg-white/5 border border-white/10">
-                  <h3 className="text-sm font-bold text-slate-200 mb-6 flex items-center gap-2"><span>📈</span> SLA On-Time (%)</h3>
-                  {dashboardData?.chartData ? (
-                    <div className="h-64 relative">
-                      <Bar
-                        data={{
-                          labels: dashboardData.chartData.labels,
-                          datasets: [{ label: 'SLA (%)', data: dashboardData.chartData.slas, backgroundColor: '#0ea5e9', borderRadius: 4 }]
-                        }}
-                        options={{
-                          responsive: true, maintainAspectRatio: false,
-                          scales: {
-                            y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
-                            x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
-                          },
-                          plugins: { legend: { display: false } }
-                        }}
-                      />
-                    </div>
-                  ) : <p className="text-xs text-slate-500">Loading grafik...</p>}
-                </div>
+          {/* 2. LOAD & SLA */}
+          {activeMenu === 'routes' && (
+            <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="panel-header" style={{ padding: '20px 20px 0 20px' }}>
+                <h3>🚚 Load & SLA per Rute</h3>
               </div>
-            )}
-
-            {/* Menu: LOAD & SLA */}
-            {activeMenu === 'routes' && (
-              <div className="rounded-2xl backdrop-blur-xl bg-white/5 border border-white/10 overflow-hidden flex flex-col">
-                <div className="p-6 border-b border-white/10">
-                  <h3 className="text-sm font-bold text-slate-200">🚚 Load & SLA per Rute</h3>
-                </div>
-                <div className="flex-1 p-6">
-                  <div className="hidden md:block w-full overflow-x-auto rounded-xl border border-white/5 bg-black/20">
-                    <table className="w-full min-w-max text-left text-sm whitespace-nowrap">
-                      <thead className="bg-white/5 text-slate-400 font-mono text-xs uppercase tracking-wider">
-                        <tr>
-                          <th className="px-6 py-4 font-semibold">Rute</th>
-                          <th className="px-6 py-4 font-semibold">Point</th>
-                          <th className="px-6 py-4 font-semibold">Pure PU/Drop</th>
-                          <th className="px-6 py-4 font-semibold">SLA %</th>
-                          <th className="px-6 py-4 font-semibold">Avg Delay</th>
-                          <th className="px-6 py-4 font-semibold">Net Load %</th>
-                          <th className="px-6 py-4 font-semibold">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/5">
-                        {filteredRoutes.map((r: any, i: number) => (
-                          <tr key={i} className="hover:bg-white/5 transition-colors">
-                            <td className="px-6 py-4 font-mono font-bold text-sky-400">{r.code}</td>
-                            <td className="px-6 py-4">{r.points}</td>
-                            <td className="px-6 py-4">{r.puDrop}</td>
-                            <td className="px-6 py-4">{r.sla}</td>
-                            <td className="px-6 py-4 text-rose-400">{r.avgDelay}</td>
-                            <td className="px-6 py-4 font-bold text-sky-400">{r.load}</td>
-                            <td className="px-6 py-4">
-                              <span className={`px-2.5 py-1 text-[10px] rounded-full uppercase tracking-wider font-bold ${getBadgeClass(r.status)}`}>{r.status}</span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="md:hidden">
+              
+              {/* FIX TABEL: overflowX auto & minWidth agar rapi di HP & tidak melebar aneh di PC */}
+              <div style={{ overflowX: 'auto', padding: '0 20px 20px 20px', width: '100%' }}>
+                <table className="desktop-table-view" style={{ width: '100%', minWidth: '800px', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ whiteSpace: 'nowrap' }}>RUTE</th>
+                      <th style={{ whiteSpace: 'nowrap' }}>POINT</th>
+                      <th style={{ whiteSpace: 'nowrap' }}>PURE PU / DROP</th>
+                      <th style={{ whiteSpace: 'nowrap' }}>SLA %</th>
+                      <th style={{ whiteSpace: 'nowrap' }}>AVG DELAY</th>
+                      <th style={{ whiteSpace: 'nowrap' }}>NET LOAD %</th>
+                      <th style={{ whiteSpace: 'nowrap' }}>STATUS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                     {filteredRoutes.map((r: any, i: number) => (
-                      <RouteAccordion key={i} rute={r} badgeClass={getBadgeClass(r.status)} />
+                      <tr key={i}>
+                        <td style={{ color: '#38bdf8', fontWeight: 'bold' }}>{r.code}</td>
+                        <td>{r.points}</td>
+                        <td>{r.puDrop}</td>
+                        <td>{r.sla}</td>
+                        <td>{r.avgDelay}</td>
+                        <td style={{ color: '#38bdf8', fontWeight: 'bold' }}>{r.load}</td>
+                        <td>
+                          <span className={`badge ${getBadgeClass(r.status)}`}>{r.status}</span>
+                        </td>
+                      </tr>
                     ))}
-                  </div>
+                    {filteredRoutes.length === 0 && (
+                      <tr><td colSpan={7} style={{ textAlign: 'center', padding: '16px', color: 'var(--app-muted)' }}>Data rute tidak ditemukan</td></tr>
+                    )}
+                  </tbody>
+                </table>
+                <div className="mobile-accordion-list">
+                  {filteredRoutes.map((r: any, i: number) => (
+                    <RouteAccordion key={i} rute={r} badgeClass={getBadgeClass(r.status)} />
+                  ))}
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Menu: INFO POINT TASK */}
-            {activeMenu === 'points' && (
-              <div className="rounded-2xl backdrop-blur-xl bg-white/5 border border-white/10 overflow-hidden flex flex-col">
-                <div className="p-6 border-b border-white/10">
-                  <h3 className="text-sm font-bold text-slate-200">📍 Info Point Task</h3>
-                </div>
-                <div className="flex-1 p-6">
-                  <div className="hidden md:block w-full overflow-x-auto rounded-xl border border-white/5 bg-black/20">
-                    <table className="w-full min-w-max text-left text-sm whitespace-nowrap">
-                      <thead className="bg-white/5 text-slate-400 font-mono text-xs uppercase tracking-wider">
-                        <tr>
-                          <th className="px-6 py-4 font-semibold">Nama Point</th>
-                          <th className="px-6 py-4 font-semibold">Visit</th>
-                          <th className="px-6 py-4 font-semibold">Pure PU/Drop</th>
-                          <th className="px-6 py-4 font-semibold">MB & BP Detail</th>
-                          <th className="px-6 py-4 font-semibold">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/5">
-                        {filteredPoints.map((p: any, i: number) => (
-                          <tr key={i} className="hover:bg-white/5 transition-colors">
-                            <td className="px-6 py-4 font-mono font-bold text-sky-400 max-w-[200px] truncate" title={p.name}>{p.name}</td>
-                            <td className="px-6 py-4">{p.visit}</td>
-                            <td className="px-6 py-4">{p.puDrop}</td>
-                            <td className="px-6 py-4 text-amber-400">{p.mbBp}</td>
-                            <td className="px-6 py-4">
-                              <span className={`px-2.5 py-1 text-[10px] rounded-full uppercase tracking-wider font-bold ${getBadgeClass(p.status)}`}>{p.status}</span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="md:hidden">
+          {/* 3. INFO POINT TASK */}
+          {activeMenu === 'points' && (
+            <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="panel-header" style={{ padding: '20px 20px 0 20px' }}>
+                <h3>📍 Info Point Task</h3>
+              </div>
+              <div style={{ overflowX: 'auto', padding: '0 20px 20px 20px', width: '100%' }}>
+                <table className="desktop-table-view" style={{ width: '100%', minWidth: '700px', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ whiteSpace: 'nowrap' }}>NAMA POINT</th>
+                      <th style={{ whiteSpace: 'nowrap' }}>VISIT</th>
+                      <th style={{ whiteSpace: 'nowrap' }}>PURE PU / DROP SS</th>
+                      <th style={{ whiteSpace: 'nowrap' }}>MB & BP DETAIL</th>
+                      <th style={{ whiteSpace: 'nowrap' }}>STATUS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                     {filteredPoints.map((p: any, i: number) => (
-                      <PointAccordion key={i} point={p} badgeClass={getBadgeClass(p.status)} />
+                      <tr key={i}>
+                        <td style={{ color: '#38bdf8', fontWeight: 'bold' }}>{p.name}</td>
+                        <td>{p.visit}</td>
+                        <td>{p.puDrop}</td>
+                        <td>{p.mbBp}</td>
+                        <td>
+                          <span className={`badge ${getBadgeClass(p.status)}`}>{p.status}</span>
+                        </td>
+                      </tr>
                     ))}
-                  </div>
+                    {filteredPoints.length === 0 && (
+                      <tr><td colSpan={5} style={{ textAlign: 'center', padding: '16px', color: 'var(--app-muted)' }}>Data point tidak ditemukan</td></tr>
+                    )}
+                  </tbody>
+                </table>
+                <div className="mobile-accordion-list">
+                  {filteredPoints.map((p: any, i: number) => (
+                    <PointAccordion key={i} point={p} badgeClass={getBadgeClass(p.status)} />
+                  ))}
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Menu: GPS PINPOINT HISTORY */}
-            {activeMenu === 'geotag' && (
-              <div className="rounded-2xl backdrop-blur-xl bg-white/5 border border-white/10 p-6 flex flex-col h-[70vh]">
-                
-                <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-                  <h3 className="text-sm font-bold text-slate-200">🗺️ History Jalur Maps per Rute</h3>
-                  <input
-                    type="text"
-                    placeholder="Cari Kode Rute..."
-                    value={pinSearchQuery}
-                    onChange={(e) => setPinSearchQuery(e.target.value)}
-                    className="w-full md:w-64 py-2 px-4 rounded-lg bg-black/30 border border-white/10 text-sm text-white font-mono focus:outline-none focus:border-sky-500"
-                  />
+          {/* 4. GPS PINPOINT HISTORY */}
+          {activeMenu === 'geotag' && (
+            <div className="card-panel">
+              <div className="panel-header" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                <h3>🗺️ History Jalur Maps per Rute</h3>
+                <input
+                  type="text"
+                  placeholder="Cari Kode Rute..."
+                  value={pinSearchQuery}
+                  onChange={(e) => setPinSearchQuery(e.target.value)}
+                  style={{
+                    padding: '8px 12px',
+                    background: 'rgba(0,0,0,0.3)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '6px',
+                    color: '#fff',
+                    fontSize: '12px',
+                    outline: 'none',
+                    width: '100%',
+                    maxWidth: '240px',
+                    fontFamily: 'monospace'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginTop: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '450px', overflowY: 'auto', paddingRight: '8px' }}>
+                  {filteredRouteCodes.map((code: string) => {
+                    const isSelected = selectedRouteCode === code;
+                    const routeItem = dashboardData?.routeRows?.find((r: any) => r.code === code);
+                    return (
+                      <div
+                        key={code}
+                        onClick={() => setSelectedRouteCode(code)}
+                        style={{
+                          padding: '14px',
+                          borderRadius: '10px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          border: `1px solid ${isSelected ? '#38bdf8' : 'rgba(255,255,255,0.05)'}`,
+                          background: isSelected ? 'rgba(56, 189, 248, 0.15)' : 'rgba(0,0,0,0.2)'
+                        }}
+                      >
+                        <div style={{ color: isSelected ? '#38bdf8' : '#e2e8f0', fontWeight: 'bold', fontSize: '12px', fontFamily: 'monospace', marginBottom: '4px' }}>
+                          🚚 {code}
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'var(--app-muted)', display: 'flex', justifyContent: 'space-between' }}>
+                          <span>Points: {routeItem?.points || '0'}</span>
+                          <span style={{ color: routeItem?.status?.includes('WARNING') ? '#fbbf24' : '#34d399' }}>{routeItem?.status || 'Optimal'}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {filteredRouteCodes.length === 0 && (
+                    <div style={{ padding: '20px', textAlign: 'center', color: 'var(--app-muted)', fontSize: '12px', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '10px' }}>
+                      Kode rute tidak ditemukan.
+                    </div>
+                  )}
                 </div>
 
-                <div className="flex flex-col md:flex-row gap-6 flex-1 min-h-0">
-                  
-                  {/* List Rute */}
-                  <div className="w-full md:w-1/3 flex flex-col gap-3 overflow-y-auto pr-2 custom-scrollbar">
-                    {filteredRouteCodes.map((code: string) => {
-                      const isSelected = selectedRouteCode === code;
-                      const routeItem = dashboardData?.routeRows?.find((r: any) => r.code === code);
-                      
-                      return (
-                        <div
-                          key={code}
-                          onClick={() => setSelectedRouteCode(code)}
-                          className={`p-4 rounded-xl cursor-pointer transition-all border ${isSelected ? 'bg-sky-500/10 border-sky-500/50 shadow-[0_0_15px_rgba(14,165,233,0.1)]' : 'bg-black/20 border-white/5 hover:bg-white/5'}`}
-                        >
-                          <div className={`font-mono text-sm font-bold mb-1 ${isSelected ? 'text-sky-400' : 'text-slate-300'}`}>
-                            🚚 {code}
-                          </div>
-                          <div className="text-[10px] text-slate-400 flex justify-between">
-                            <span>Points: {routeItem?.points || '0'}</span>
-                            <span className={routeItem?.status?.includes('WARNING') ? 'text-amber-400' : 'text-emerald-400'}>
-                              {routeItem?.status || 'Optimal'}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {filteredRouteCodes.length === 0 && (
-                      <div className="p-8 text-center text-slate-500 text-sm border border-dashed border-white/10 rounded-xl">
-                        Rute tidak ditemukan.
+                {/* AREA RENDER MAPS */}
+                <div style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', overflow: 'hidden', height: '450px', background: 'rgba(0,0,0,0.4)', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ padding: '12px 16px', background: 'rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: '#38bdf8', fontSize: '12px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+                      🎯 Aktif: {selectedRouteCode || 'Pilih Rute'}
+                    </span>
+                    <span style={{ fontSize: '10px', background: 'rgba(0,0,0,0.5)', padding: '4px 8px', borderRadius: '4px', color: '#94a3b8' }}>Auto-Search Engine</span>
+                  </div>
+                  <div style={{ flex: 1, width: '100%', position: 'relative' }}>
+                    {selectedRouteCode ? (
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0, position: 'absolute', top: 0, left: 0 }}
+                        allowFullScreen
+                        loading="lazy"
+                        src={renderMapsUrl()}
+                      ></iframe>
+                    ) : (
+                      <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: '13px' }}>
+                        Pilih rute di daftar samping untuk merender Peta
                       </div>
                     )}
                   </div>
-
-                  {/* Maps Container (Pencarian Otomatis Iframe) */}
-                  <div className="flex-1 rounded-2xl overflow-hidden border border-white/10 bg-black/30 flex flex-col">
-                    <div className="p-3 bg-white/5 border-b border-white/10 flex justify-between items-center">
-                      <span className="font-mono text-xs font-bold text-sky-400">
-                        🎯 Aktif: {selectedRouteCode || 'Pilih Rute'}
-                      </span>
-                      <span className="text-[10px] text-slate-500 bg-black/40 px-2 py-1 rounded">Auto Search Engine</span>
-                    </div>
-                    <div className="flex-1 w-full h-full relative bg-slate-900/50">
-                      {selectedRouteCode ? (
-                        <iframe
-                          width="100%"
-                          height="100%"
-                          style={{ border: 0 }}
-                          allowFullScreen
-                          loading="lazy"
-                          src={renderMapsUrl()}
-                          className="absolute inset-0"
-                        ></iframe>
-                      ) : (
-                        <div className="flex items-center justify-center h-full text-slate-500 text-sm">
-                          Pilih rute di samping untuk merender Peta
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-          </div>
         </div>
       </div>
-      
-      {/* Loading Overlay */}
-      {isLoading && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-sm">
-          <div className="w-10 h-10 border-4 border-slate-700 border-t-sky-500 rounded-full animate-spin mb-4"></div>
-          <span className="text-xs font-bold tracking-widest text-sky-400">SINKRONISASI DATA</span>
-        </div>
-      )}
-      
     </div>
   );
 }
