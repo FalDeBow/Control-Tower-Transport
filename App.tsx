@@ -20,17 +20,17 @@ ChartJS.register(
   LinearScale
 );
 
-// RACIKAN TINTED FROSTED GLASS (Kaca transparan kokoh, teks tetap tajam dan tidak buram)
+// TINTED FROSTED GLASS - Elegan di PC & Mobile tanpa buram
 const glassStyle = {
-  background: 'rgba(15, 23, 42, 0.82)',
-  backdropFilter: 'blur(12px)',
-  WebkitBackdropFilter: 'blur(12px)',
-  border: '1px solid rgba(255, 255, 255, 0.12)',
+  background: 'rgba(15, 23, 42, 0.85)',
+  backdropFilter: 'blur(14px)',
+  WebkitBackdropFilter: 'blur(14px)',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
   borderRadius: '16px',
-  boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+  boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
 };
 
-// KOMPONEN ACCORDION RUTE (MOBILE)
+// KOMPONEN ACCORDION RUTE (KHUSUS MOBILE)
 const RouteAccordion = ({ rute, badgeClass }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
@@ -116,7 +116,7 @@ export default function App() {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      const cacheKey = `transport_glass_v2_${mode}_${selectedDate}`;
+      const cacheKey = `transport_glass_v3_${mode}_${selectedDate}`;
       const cachedData = localStorage.getItem(cacheKey);
       if (cachedData) {
         const parsed = JSON.parse(cachedData);
@@ -187,11 +187,10 @@ export default function App() {
   };
 
   return (
-    <div style={{ position: 'relative', minHeight: '100vh', background: '#070b14', color: '#f8fafc', overflowX: 'hidden' }}>
+    <div style={{ position: 'relative', minHeight: '100vh', background: '#050811', color: '#f8fafc' }}>
       
-      {/* BACKGROUND AMBIENT GLOW (Menghidupkan efek transparan kaca di PC) */}
-      <div style={{ position: 'fixed', top: '-10%', left: '-10%', width: '50vw', height: '50vw', background: 'radial-gradient(circle, rgba(14, 165, 233, 0.12) 0%, rgba(0,0,0,0) 70%)', borderRadius: '50%', pointerEvents: 'none', zIndex: 0 }}></div>
-      <div style={{ position: 'fixed', bottom: '-10%', right: '-10%', width: '50vw', height: '50vw', background: 'radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, rgba(0,0,0,0) 70%)', borderRadius: '50%', pointerEvents: 'none', zIndex: 0 }}></div>
+      {/* AMBIENT LIGHT (Memperindah estetika Transport Glass di PC) */}
+      <div style={{ position: 'fixed', top: '-20%', left: '-10%', width: '60vw', height: '60vw', background: 'radial-gradient(circle, rgba(14, 165, 233, 0.08) 0%, rgba(0,0,0,0) 70%)', borderRadius: '50%', pointerEvents: 'none', zIndex: 0 }}></div>
 
       {isLoading && (
         <div id="loaderOverlay" style={{ zIndex: 9999 }}>
@@ -303,7 +302,7 @@ export default function App() {
             </div>
           )}
 
-          {/* 2. LOAD & SLA (TABEL DESKTOP RAPI ALAMI, TANPA PAKSAAN KOLOM KAKU) */}
+          {/* 2. LOAD & SLA (TABLE DESKTOP STANDAR BERSIH & ACCORDION MOBILE) */}
           {activeMenu === 'routes' && (
             <div className="card-panel" style={{ ...glassStyle, padding: 0, overflow: 'hidden' }}>
               <div className="panel-header" style={{ padding: '20px 20px 0 20px' }}>
@@ -314,25 +313,25 @@ export default function App() {
                 <table className="desktop-table-view" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', fontSize: '12px', letterSpacing: '0.5px' }}>
-                      <th style={{ padding: '14px 12px' }}>RUTE</th>
-                      <th style={{ padding: '14px 12px' }}>POINT</th>
-                      <th style={{ padding: '14px 12px' }}>PURE PU / DROP</th>
-                      <th style={{ padding: '14px 12px' }}>SLA %</th>
-                      <th style={{ padding: '14px 12px' }}>AVG DELAY</th>
-                      <th style={{ padding: '14px 12px' }}>NET LOAD</th>
-                      <th style={{ padding: '14px 12px' }}>STATUS</th>
+                      <th style={{ padding: '14px 16px' }}>RUTE</th>
+                      <th style={{ padding: '14px 16px' }}>POINT</th>
+                      <th style={{ padding: '14px 16px' }}>PURE PU / DROP</th>
+                      <th style={{ padding: '14px 16px' }}>SLA %</th>
+                      <th style={{ padding: '14px 16px' }}>AVG DELAY</th>
+                      <th style={{ padding: '14px 16px' }}>NET LOAD</th>
+                      <th style={{ padding: '14px 16px' }}>STATUS</th>
                     </tr>
                   </thead>
                   <tbody style={{ fontSize: '13px' }}>
                     {filteredRoutes.map((r: any, i: number) => (
                       <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <td style={{ padding: '14px 12px', color: '#38bdf8', fontWeight: 'bold', fontFamily: 'monospace' }}>{r.code}</td>
-                        <td style={{ padding: '14px 12px' }}>{r.points}</td>
-                        <td style={{ padding: '14px 12px' }}>{r.puDrop}</td>
-                        <td style={{ padding: '14px 12px', color: '#34d399', fontWeight: 600 }}>{r.sla}</td>
-                        <td style={{ padding: '14px 12px', color: '#fbbf24' }}>{r.avgDelay}</td>
-                        <td style={{ padding: '14px 12px', color: '#38bdf8', fontWeight: 'bold' }}>{r.load}</td>
-                        <td style={{ padding: '14px 12px' }}>
+                        <td style={{ padding: '14px 16px', color: '#38bdf8', fontWeight: 'bold', fontFamily: 'monospace' }}>{r.code}</td>
+                        <td style={{ padding: '14px 16px' }}>{r.points}</td>
+                        <td style={{ padding: '14px 16px' }}>{r.puDrop}</td>
+                        <td style={{ padding: '14px 16px', color: '#34d399', fontWeight: 600 }}>{r.sla}</td>
+                        <td style={{ padding: '14px 16px', color: '#fbbf24' }}>{r.avgDelay}</td>
+                        <td style={{ padding: '14px 16px', color: '#38bdf8', fontWeight: 'bold' }}>{r.load}</td>
+                        <td style={{ padding: '14px 16px' }}>
                           <span className={`badge ${getBadgeClass(r.status)}`} style={{ fontSize: '10px' }}>{r.status}</span>
                         </td>
                       </tr>
@@ -357,21 +356,21 @@ export default function App() {
                 <table className="desktop-table-view" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', fontSize: '12px', letterSpacing: '0.5px' }}>
-                      <th style={{ padding: '14px 12px' }}>NAMA POINT</th>
-                      <th style={{ padding: '14px 12px' }}>VISIT</th>
-                      <th style={{ padding: '14px 12px' }}>PURE PU / DROP SS</th>
-                      <th style={{ padding: '14px 12px' }}>MB & BP DETAIL</th>
-                      <th style={{ padding: '14px 12px' }}>STATUS</th>
+                      <th style={{ padding: '14px 16px' }}>NAMA POINT</th>
+                      <th style={{ padding: '14px 16px' }}>VISIT</th>
+                      <th style={{ padding: '14px 16px' }}>PURE PU / DROP SS</th>
+                      <th style={{ padding: '14px 16px' }}>MB & BP DETAIL</th>
+                      <th style={{ padding: '14px 16px' }}>STATUS</th>
                     </tr>
                   </thead>
                   <tbody style={{ fontSize: '13px' }}>
                     {filteredPoints.map((p: any, i: number) => (
                       <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <td style={{ padding: '14px 12px', color: '#38bdf8', fontWeight: 'bold' }}>{p.name}</td>
-                        <td style={{ padding: '14px 12px' }}>{p.visit}</td>
-                        <td style={{ padding: '14px 12px' }}>{p.puDrop}</td>
-                        <td style={{ padding: '14px 12px' }}>{p.mbBp}</td>
-                        <td style={{ padding: '14px 12px' }}><span className={`badge ${getBadgeClass(p.status)}`} style={{ fontSize: '10px' }}>{p.status}</span></td>
+                        <td style={{ padding: '14px 16px', color: '#38bdf8', fontWeight: 'bold' }}>{p.name}</td>
+                        <td style={{ padding: '14px 16px' }}>{p.visit}</td>
+                        <td style={{ padding: '14px 16px' }}>{p.puDrop}</td>
+                        <td style={{ padding: '14px 16px' }}>{p.mbBp}</td>
+                        <td style={{ padding: '14px 16px' }}><span className={`badge ${getBadgeClass(p.status)}`} style={{ fontSize: '10px' }}>{p.status}</span></td>
                       </tr>
                     ))}
                     {filteredPoints.length === 0 && (
@@ -419,7 +418,7 @@ export default function App() {
                     <span style={{ color: '#38bdf8', fontSize: '13px', fontWeight: 'bold', fontFamily: 'monospace' }}>🎯 Rute Aktif: {selectedRouteCode || 'Pilih Rute'}</span>
                   </div>
                   
-                  <div style={{ height: '320px', width: '100%', position: 'relative' }}>
+                  <div style={{ height: '350px', width: '100%', position: 'relative' }}>
                     {selectedRouteCode ? (
                       <iframe width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" src={renderMapsUrl()}></iframe>
                     ) : (
