@@ -3,14 +3,10 @@
   "name": "Control Tower Dashboard",
   "icons": [
     {
-      "src": "logo192.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/1085/1085488.png",
       "type": "image/png",
-      "sizes": "192x192"
-    },
-    {
-      "src": "logo512.png",
-      "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
   "start_url": "/",
