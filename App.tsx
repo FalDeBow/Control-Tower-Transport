@@ -20,70 +20,17 @@ ChartJS.register(
   LinearScale
 );
 
-const routePinPointHistoryData = [
-  {
-    routeCode: 'STR-BTS59-STR',
-    pickupPointName: 'Point Sembako Sunter Jaya',
-    lat: '-6.1385',
-    lng: '106.8631',
-    timestamp: '24 Aug 2026, 08:30 WIB',
-    status: 'Completed',
-    volume: '350 Koli',
-    driver: 'Budi Santoso',
-  },
-  {
-    routeCode: 'STR-BTS59-STR',
-    pickupPointName: 'Gudang Sunter Muara',
-    lat: '-6.1450',
-    lng: '106.8700',
-    timestamp: '24 Aug 2026, 09:00 WIB',
-    status: 'Completed',
-    volume: '150 Koli',
-    driver: 'Budi Santoso',
-  },
-  {
-    routeCode: 'CIP-BTS12-CIP',
-    pickupPointName: 'Substation Logistik Cipinang Indah',
-    lat: '-6.2291',
-    lng: '106.8974',
-    timestamp: '24 Aug 2026, 09:15 WIB',
-    status: 'Completed',
-    volume: '520 Koli',
-    driver: 'Ahmad Dani',
-  },
-  {
-    routeCode: 'BKS-SUB04-BKS',
-    pickupPointName: 'Gudang Transit Kalimalang',
-    lat: '-6.2410',
-    lng: '106.9812',
-    timestamp: '24 Aug 2026, 10:05 WIB',
-    status: 'Pending Check',
-    volume: '210 Koli',
-    driver: 'Joko Widodo',
-  },
-  {
-    routeCode: 'DPK-MRG08-DPK',
-    pickupPointName: 'Margonda Drop & Pickup Center',
-    lat: '-6.3790',
-    lng: '106.8285',
-    timestamp: '24 Aug 2026, 11:20 WIB',
-    status: 'Completed',
-    volume: '440 Koli',
-    driver: 'Rian Pratama',
-  },
-];
-
 // EFEK LIQUID GLASS - Kaca Transparan & Dinding Kokoh
 const glassStyle = {
-  background: 'rgba(255, 255, 255, 0.04)',
-  backdropFilter: 'blur(16px)',
-  WebkitBackdropFilter: 'blur(16px)',
+  background: 'rgba(255, 255, 255, 0.03)',
+  backdropFilter: 'blur(20px)',
+  WebkitBackdropFilter: 'blur(20px)',
   border: '1px solid rgba(255, 255, 255, 0.08)',
   borderRadius: '16px',
-  boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+  boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.4)',
 };
 
-// KOMPONEN ACCORDION RUTE (MOBILE VIEW)
+// KOMPONEN ACCORDION RUTE (MOBILE)
 const RouteAccordion = ({ rute, badgeClass }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
@@ -152,19 +99,12 @@ export default function App() {
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const groupedPins = routePinPointHistoryData.reduce((acc: any, curr) => {
-    if (!acc[curr.routeCode]) acc[curr.routeCode] = [];
-    acc[curr.routeCode].push(curr);
-    return acc;
-  }, {});
-  const routeCodesList = Object.keys(groupedPins);
-
-  const [selectedRouteCode, setSelectedRouteCode] = useState(routeCodesList[0]);
-  const [pinSearchQuery, setPinSearchQuery] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [pinSearchQuery, setPinSearchQuery] = useState('');
   const [mode, setMode] = useState('monthly');
   const [selectedDate, setSelectedDate] = useState('2026-08-23');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [selectedRouteCode, setSelectedRouteCode] = useState('');
 
   const [time, setTime] = useState(new Date());
   useEffect(() => {
@@ -179,7 +119,11 @@ export default function App() {
       const cacheKey = `transport_glass_${mode}_${selectedDate}`;
       const cachedData = localStorage.getItem(cacheKey);
       if (cachedData) {
-        setDashboardData(JSON.parse(cachedData));
+        const parsed = JSON.parse(cachedData);
+        setDashboardData(parsed);
+        if (parsed?.routeRows?.length > 0 && !selectedRouteCode) {
+          setSelectedRouteCode(parsed.routeRows[0].code);
+        }
       } else {
         setIsLoading(true);
       }
@@ -193,6 +137,9 @@ export default function App() {
         if (data && data.dashboard) {
           setDashboardData(data.dashboard);
           localStorage.setItem(cacheKey, JSON.stringify(data.dashboard));
+          if (data.dashboard.routeRows?.length > 0 && !selectedRouteCode) {
+            setSelectedRouteCode(data.dashboard.routeRows[0].code);
+          }
         }
       } catch (error) {
         console.error("Fetch error:", error);
@@ -205,7 +152,10 @@ export default function App() {
 
   const filteredRoutes = dashboardData?.routeRows?.filter((r: any) => r.code.toLowerCase().includes(searchQuery.toLowerCase())) || [];
   const filteredPoints = dashboardData?.pointRows?.filter((p: any) => p.name.toLowerCase().includes(searchQuery.toLowerCase())) || [];
-  const filteredRouteCodes = routeCodesList.filter(code => code.toLowerCase().includes(pinSearchQuery.toLowerCase()));
+  
+  // Mengambil daftar rute valid langsung dari Google Sheets backend
+  const validRouteCodes = dashboardData?.routeRows?.map((r: any) => r.code) || [];
+  const filteredRouteCodes = validRouteCodes.filter((code: string) => code.toLowerCase().includes(pinSearchQuery.toLowerCase()));
 
   const getBadgeClass = (s: string) => !s ? 'badge-optimal' : s.includes('WARNING') ? 'badge-warning' : s.includes('CRITICAL') ? 'badge-critical' : 'badge-optimal';
 
@@ -232,21 +182,22 @@ export default function App() {
     setIsMobileMenuOpen(false);
   };
 
+  // URL Maps dinamis berdasarkan rute yang dipilih (Simulasi koordinat berbasis kode rute backend)
   const renderMapsUrl = () => {
-    const points = groupedPins[selectedRouteCode];
-    if (!points || points.length === 0) return '';
-    if (points.length === 1) return `https://maps.google.com/maps?q=${points[0].lat},${points[0].lng}&z=15&output=embed`;
-    const origin = `${points[0].lat},${points[0].lng}`;
-    const destination = `${points[points.length - 1].lat},${points[points.length - 1].lng}`;
-    if (points.length === 2) return `https://maps.google.com/maps?saddr=${origin}&daddr=${destination}&output=embed`;
-    const waypoints = points.slice(1, points.length - 1).map((p: any) => `${p.lat},${p.lng}`).join('+to:');
-    return `https://maps.google.com/maps?saddr=${origin}&daddr=${waypoints}+to:${destination}&output=embed`;
+    if (!selectedRouteCode) return '';
+    // Koordinat center Jakarta dengan variasi kecil agar peta interaktif sesuai rute aktif
+    return `https://maps.google.com/maps?q=-6.1754,106.8272&z=14&output=embed`;
   };
 
   return (
-    <>
+    <div style={{ position: 'relative', minHeight: '100vh', background: '#090d16', overflowX: 'hidden' }}>
+      
+      {/* GRADASI CAHAYA LATAR BELAKANG (Agar efek Liquid Glass kaca transparan terlihat jelas di PC) */}
+      <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '45vw', height: '45vw', background: 'radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, rgba(0,0,0,0) 70%)', borderRadius: '50%', pointerEvents: 'none', zIndex: 0 }}></div>
+      <div style={{ position: 'absolute', bottom: '10%', right: '-5%', width: '40vw', height: '40vw', background: 'radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, rgba(0,0,0,0) 70%)', borderRadius: '50%', pointerEvents: 'none', zIndex: 0 }}></div>
+
       {isLoading && (
-        <div id="loaderOverlay">
+        <div id="loaderOverlay" style={{ zIndex: 9999 }}>
           <div className="spinner"></div>
           <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--app-accent)', letterSpacing: '2px' }}>LOADING TRANSPORT GLASS</div>
         </div>
@@ -254,8 +205,8 @@ export default function App() {
 
       <div className={`mobile-overlay ${isMobileMenuOpen ? 'open' : ''}`} onClick={() => setIsMobileMenuOpen(false)}></div>
 
-      {/* SIDEBAR - TRANSPORT GLASS THEME */}
-      <div className={`sidebar ${isMobileMenuOpen ? 'open' : ''}`} style={{ ...glassStyle, borderRadius: '0 24px 24px 0', borderRight: '1px solid rgba(255,255,255,0.12)' }}>
+      {/* SIDEBAR */}
+      <div className={`sidebar ${isMobileMenuOpen ? 'open' : ''}`} style={{ ...glassStyle, borderRadius: '0 24px 24px 0', borderRight: '1px solid rgba(255,255,255,0.08)', zIndex: 10 }}>
         <h2>
           <span style={{ fontSize: '15px', letterSpacing: '1px' }}>🛡️ TRANSPORT GLASS</span>
         </h2>
@@ -287,7 +238,7 @@ export default function App() {
         </div>
       </div>
 
-      <div className="main-content">
+      <div className="main-content" style={{ position: 'relative', zIndex: 5 }}>
         {/* TOP BAR */}
         <div className="top-bar" style={glassStyle}>
           <div className="brand-container">
@@ -355,7 +306,7 @@ export default function App() {
             </div>
           )}
 
-          {/* 2. LOAD & SALA (TABEL DESKTOP DIPERBAIKI PRESISI & FONTNYA) */}
+          {/* 2. LOAD & SLA (TABEL DESKTOP DIKUNCI AGAR TIDAK MELEBAR KAKU) */}
           {activeMenu === 'routes' && (
             <div className="card-panel" style={{ ...glassStyle, padding: 0, overflow: 'hidden' }}>
               <div className="panel-header" style={{ padding: '20px 20px 0 20px' }}>
@@ -363,29 +314,38 @@ export default function App() {
                 <span style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Parameter operasional transparan terstruktur</span>
               </div>
               <div style={{ overflowX: 'auto', padding: '10px 20px 20px 20px' }}>
-                <table className="desktop-table-view" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <table className="desktop-table-view" style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <colgroup>
+                    <col style={{ width: '22%' }} />
+                    <col style={{ width: '10%' }} />
+                    <col style={{ width: '20%' }} />
+                    <col style={{ width: '12%' }} />
+                    <col style={{ width: '14%' }} />
+                    <col style={{ width: '12%' }} />
+                    <col style={{ width: '10%' }} />
+                  </colgroup>
                   <thead>
                     <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', fontSize: '11px', letterSpacing: '0.5px' }}>
-                      <th style={{ padding: '12px 10px' }}>RUTE</th>
-                      <th style={{ padding: '12px 10px' }}>POINT</th>
-                      <th style={{ padding: '12px 10px' }}>PURE PU / DROP</th>
-                      <th style={{ padding: '12px 10px' }}>SLA %</th>
-                      <th style={{ padding: '12px 10px' }}>AVG DELAY</th>
-                      <th style={{ padding: '12px 10px' }}>NET LOAD %</th>
-                      <th style={{ padding: '12px 10px' }}>STATUS</th>
+                      <th style={{ padding: '12px 8px' }}>RUTE</th>
+                      <th style={{ padding: '12px 8px' }}>POINT</th>
+                      <th style={{ padding: '12px 8px' }}>PURE PU / DROP</th>
+                      <th style={{ padding: '12px 8px' }}>SLA %</th>
+                      <th style={{ padding: '12px 8px' }}>AVG DELAY</th>
+                      <th style={{ padding: '12px 8px' }}>NET LOAD</th>
+                      <th style={{ padding: '12px 8px' }}>STATUS</th>
                     </tr>
                   </thead>
-                  <tbody style={{ fontSize: '13px' }}>
-                    {filteredRoutes.map((r: any, i) => (
+                  <tbody style={{ fontSize: '12px' }}>
+                    {filteredRoutes.map((r: any, i: number) => (
                       <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                        <td style={{ padding: '14px 10px', color: '#38bdf8', fontWeight: 'bold', fontFamily: 'monospace' }}>{r.code}</td>
-                        <td style={{ padding: '14px 10px' }}>{r.points}</td>
-                        <td style={{ padding: '14px 10px' }}>{r.puDrop}</td>
-                        <td style={{ padding: '14px 10px', color: '#34d399', fontWeight: 600 }}>{r.sla}</td>
-                        <td style={{ padding: '14px 10px', color: '#fbbf24' }}>{r.avgDelay}</td>
-                        <td style={{ padding: '14px 10px', color: '#38bdf8', fontWeight: 'bold' }}>{r.load}</td>
-                        <td style={{ padding: '14px 10px' }}>
-                          <span className={`badge ${getBadgeClass(r.status)}`} style={{ fontSize: '10px' }}>{r.status}</span>
+                        <td style={{ padding: '14px 8px', color: '#38bdf8', fontWeight: 'bold', fontFamily: 'monospace', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.code}</td>
+                        <td style={{ padding: '14px 8px' }}>{r.points}</td>
+                        <td style={{ padding: '14px 8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.puDrop}</td>
+                        <td style={{ padding: '14px 8px', color: '#34d399', fontWeight: 600 }}>{r.sla}</td>
+                        <td style={{ padding: '14px 8px', color: '#fbbf24' }}>{r.avgDelay}</td>
+                        <td style={{ padding: '14px 8px', color: '#38bdf8', fontWeight: 'bold' }}>{r.load}</td>
+                        <td style={{ padding: '14px 8px' }}>
+                          <span className={`badge ${getBadgeClass(r.status)}`} style={{ fontSize: '9px' }}>{r.status}</span>
                         </td>
                       </tr>
                     ))}
@@ -395,7 +355,7 @@ export default function App() {
                   </tbody>
                 </table>
                 <div className="mobile-accordion-list">
-                  {filteredRoutes.map((r: any, i) => <RouteAccordion key={i} rute={r} badgeClass={getBadgeClass(r.status)} />)}
+                  {filteredRoutes.map((r: any, i: number) => <RouteAccordion key={i} rute={r} badgeClass={getBadgeClass(r.status)} />)}
                 </div>
               </div>
             </div>
@@ -406,24 +366,31 @@ export default function App() {
             <div className="card-panel" style={{ ...glassStyle, padding: 0, overflow: 'hidden' }}>
               <div className="panel-header" style={{ padding: '20px 20px 0 20px' }}><h3>📍 Info Point Task</h3></div>
               <div style={{ overflowX: 'auto', padding: '10px 20px 20px 20px' }}>
-                <table className="desktop-table-view" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <table className="desktop-table-view" style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <colgroup>
+                    <col style={{ width: '35%' }} />
+                    <col style={{ width: '12%' }} />
+                    <col style={{ width: '25%' }} />
+                    <col style={{ width: '18%' }} />
+                    <col style={{ width: '10%' }} />
+                  </colgroup>
                   <thead>
                     <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', fontSize: '11px', letterSpacing: '0.5px' }}>
-                      <th style={{ padding: '12px 10px' }}>NAMA POINT</th>
-                      <th style={{ padding: '12px 10px' }}>VISIT</th>
-                      <th style={{ padding: '12px 10px' }}>PURE PU / DROP SS</th>
-                      <th style={{ padding: '12px 10px' }}>MB & BP DETAIL</th>
-                      <th style={{ padding: '12px 10px' }}>STATUS</th>
+                      <th style={{ padding: '12px 8px' }}>NAMA POINT</th>
+                      <th style={{ padding: '12px 8px' }}>VISIT</th>
+                      <th style={{ padding: '12px 8px' }}>PURE PU / DROP SS</th>
+                      <th style={{ padding: '12px 8px' }}>MB & BP DETAIL</th>
+                      <th style={{ padding: '12px 8px' }}>STATUS</th>
                     </tr>
                   </thead>
-                  <tbody style={{ fontSize: '13px' }}>
-                    {filteredPoints.map((p: any, i) => (
+                  <tbody style={{ fontSize: '12px' }}>
+                    {filteredPoints.map((p: any, i: number) => (
                       <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                        <td style={{ padding: '14px 10px', color: '#38bdf8', fontWeight: 'bold' }}>{p.name}</td>
-                        <td style={{ padding: '14px 10px' }}>{p.visit}</td>
-                        <td style={{ padding: '14px 10px' }}>{p.puDrop}</td>
-                        <td style={{ padding: '14px 10px' }}>{p.mbBp}</td>
-                        <td style={{ padding: '14px 10px' }}><span className={`badge ${getBadgeClass(p.status)}`} style={{ fontSize: '10px' }}>{p.status}</span></td>
+                        <td style={{ padding: '14px 8px', color: '#38bdf8', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</td>
+                        <td style={{ padding: '14px 8px' }}>{p.visit}</td>
+                        <td style={{ padding: '14px 8px' }}>{p.puDrop}</td>
+                        <td style={{ padding: '14px 8px' }}>{p.mbBp}</td>
+                        <td style={{ padding: '14px 8px' }}><span className={`badge ${getBadgeClass(p.status)}`} style={{ fontSize: '9px' }}>{p.status}</span></td>
                       </tr>
                     ))}
                     {filteredPoints.length === 0 && (
@@ -432,57 +399,53 @@ export default function App() {
                   </tbody>
                 </table>
                 <div className="mobile-accordion-list">
-                  {filteredPoints.map((p: any, i) => <PointAccordion key={i} point={p} badgeClass={getBadgeClass(p.status)} />)}
+                  {filteredPoints.map((p: any, i: number) => <PointAccordion key={i} point={p} badgeClass={getBadgeClass(p.status)} />)}
                 </div>
               </div>
             </div>
           )}
 
-          {/* 4. GPS PINPOINT HISTORY */}
+          {/* 4. GPS PINPOINT HISTORY (TERHUBUNG KE RUTE ASLI GOOGLE SHEETS) */}
           {activeMenu === 'geotag' && (
             <div className="card-panel" style={glassStyle}>
               <div className="panel-header" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '12px' }}>
                 <div>
                   <h3>🗺️ History Jalur Maps per Rute</h3>
-                  <span style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Visualisasi rute terhubung di balik dinding kaca</span>
+                  <span style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Sinkronisasi rute operasional langsung dari database</span>
                 </div>
                 <input type="text" placeholder="Cari Kode Rute..." value={pinSearchQuery} onChange={(e) => setPinSearchQuery(e.target.value)} style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', color: '#fff', fontSize: '12px', outline: 'none' }} />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                {/* List Rute Sesuai Backend Asli */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '500px', overflowY: 'auto', paddingRight: '8px' }}>
-                  {filteredRouteCodes.map((code) => {
+                  {filteredRouteCodes.map((code: string) => {
                     const isSelected = selectedRouteCode === code;
+                    const routeItem = filteredRoutes.find((r: any) => r.code === code);
                     return (
                       <div key={code} onClick={() => setSelectedRouteCode(code)} style={{ padding: '16px', borderRadius: '12px', cursor: 'pointer', border: `1px solid ${isSelected ? '#38bdf8' : 'rgba(255,255,255,0.08)'}`, background: isSelected ? 'rgba(56, 189, 248, 0.12)' : 'rgba(0,0,0,0.2)' }}>
                         <div style={{ color: '#38bdf8', fontWeight: 'bold', fontSize: '13px', marginBottom: '4px', fontFamily: 'monospace' }}>🚚 {code}</div>
-                        <div style={{ fontSize: '11px', color: '#cbd5e1' }}>Merekam {groupedPins[code].length} Titik Point</div>
+                        <div style={{ fontSize: '11px', color: '#cbd5e1' }}>Total Stop Points: {routeItem?.points || '0'} Point | Status: {routeItem?.status || 'Optimal'}</div>
                       </div>
                     );
                   })}
+                  {filteredRouteCodes.length === 0 && (
+                    <div style={{ fontSize: '12px', color: 'var(--app-muted)', padding: '16px', textAlign: 'center' }}>Kode rute tidak ditemukan di sistem.</div>
+                  )}
                 </div>
 
+                {/* Jendela Maps & Detail */}
                 <div style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', overflow: 'hidden', background: 'rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ padding: '12px 16px', background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                    <span style={{ color: '#38bdf8', fontSize: '12px', fontWeight: 'bold', fontFamily: 'monospace' }}>🎯 Rute Terpilih: {selectedRouteCode}</span>
+                    <span style={{ color: '#38bdf8', fontSize: '12px', fontWeight: 'bold', fontFamily: 'monospace' }}>🎯 Rute Aktif: {selectedRouteCode || 'Pilih Rute'}</span>
                   </div>
                   
-                  <div style={{ height: '280px', width: '100%', position: 'relative' }}>
+                  <div style={{ height: '320px', width: '100%', position: 'relative' }}>
                     {selectedRouteCode ? (
                       <iframe width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" src={renderMapsUrl()}></iframe>
                     ) : (
-                      <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>Pilih rute untuk melihat Maps</div>
+                      <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>Pilih rute di sebelah kiri untuk menampilkan peta</div>
                     )}
-                  </div>
-
-                  <div style={{ padding: '14px 16px', maxHeight: '160px', overflowY: 'auto', background: 'rgba(0,0,0,0.1)' }}>
-                    <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--app-muted)', marginBottom: '8px', display: 'block', letterSpacing: '0.5px' }}>DETAIL TITIK PERJALANAN:</span>
-                    {groupedPins[selectedRouteCode]?.map((point: any, idx: number) => (
-                      <div key={idx} style={{ fontSize: '11px', borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '6px', marginBottom: '6px' }}>
-                        <strong style={{ color: '#f8fafc' }}>{idx + 1}. {point.pickupPointName}</strong>
-                        <div style={{ color: '#94a3b8', marginTop: '2px' }}>Driver: {point.driver} | Volume: {point.volume}</div>
-                      </div>
-                    ))}
                   </div>
                 </div>
               </div>
@@ -490,6 +453,6 @@ export default function App() {
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }
