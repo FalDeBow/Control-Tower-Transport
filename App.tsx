@@ -35,7 +35,6 @@ const RouteAccordion = ({ rute, badgeClass }: any) => {
       </div>
       {isOpen && (
         <div className="accordion-body" style={{ background: 'rgba(0,0,0,0.3)', padding: '16px' }}>
-          {/* Layout Grid agar data rata kiri-kanan secara presisi */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '12px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>Total Stop</span>
@@ -95,6 +94,7 @@ const PointAccordion = ({ point, badgeClass }: any) => {
 
 export default function App() {
   const [activeMenu, setActiveMenu] = useState('overview');
+  const [rawGasData, setRawGasData] = useState<any[]>([]);
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -113,32 +113,17 @@ export default function App() {
   const timeString = time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const dateString = time.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
+  // 1. FETCH RAW DATA API
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      const cacheKey = `transport_glass_clean_${mode}_${selectedDate}`;
-      const cachedData = localStorage.getItem(cacheKey);
-      if (cachedData) {
-        const parsed = JSON.parse(cachedData);
-        setDashboardData(parsed);
-        if (parsed?.routeRows?.length > 0 && !selectedRouteCode) {
-          setSelectedRouteCode(parsed.routeRows[0].code);
-        }
-      } else {
-        setIsLoading(true);
-      }
-
+    const fetchRawData = async () => {
+      setIsLoading(true);
       try {
-        const filterTanggal = mode === 'monthly' ? 'SEMUA TANGGAL' : selectedDate;
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwUC07JIZ7ASWJhy4VyeHqXPnDQd2IPhmCraXOz9xg2Lti4dz9TxvlrNRS-Je7_7fsW/exec";
-        const response = await fetch(`${GAS_API_URL}?action=getInitialData&tanggal=${filterTanggal}&rute=SEMUA%20RUTE`);
-        const data = await response.json();
+        const response = await fetch(GAS_API_URL);
+        const result = await response.json();
         
-        if (data && data.dashboard) {
-          setDashboardData(data.dashboard);
-          localStorage.setItem(cacheKey, JSON.stringify(data.dashboard));
-          if (data.dashboard.routeRows?.length > 0 && !selectedRouteCode) {
-            setSelectedRouteCode(data.dashboard.routeRows[0].code);
-          }
+        if (result.status === "success" && result.data) {
+          setRawGasData(result.data);
         }
       } catch (error) {
         console.error("Fetch error:", error);
@@ -146,8 +131,126 @@ export default function App() {
         setIsLoading(false);
       }
     };
-    fetchDashboardData();
-  }, [mode, selectedDate]);
+    fetchRawData();
+  }, []);
+
+  // 2. PROSES & AGREGASI DATA (Pemisahan Pickup & Drop dilakukan di sini)
+  useEffect(() => {
+    if (!rawGasData || rawGasData.length === 0) return;
+
+    // Filter berdasarkan mode (Bulanan vs Harian)
+    const filtered = mode === 'monthly'
+      ? rawGasData
+      : rawGasData.filter((d: any) => String(d['Tanggal Operasional']).substring(0, 10) === selectedDate);
+
+    let tripSet = new Set();
+    let totalPurePU = 0;
+    let totalPureDrop = 0;
+    let onTimeCount = 0;
+    let totalDelayMins = 0;
+    let delayCount = 0;
+
+    let routeMap: any = {};
+    let pointRows: any[] = [];
+
+    filtered.forEach((d: any) => {
+      const rute = d['Rute Armada'] || 'UNASSIGNED';
+      const dateRute = `${d['Tanggal Operasional']}_${rute}_${d['Driver (Satmob)']}`;
+      tripSet.add(dateRute);
+
+      // Identifikasi tipe baris
+      const tipeTask = (d['Tipe Task'] || '').toLowerCase();
+      const isPickUp = tipeTask.includes('pickup');
+      const isDrop = tipeTask.includes('ss') || tipeTask.includes('drop');
+      
+      const paket = Number(d['Paket']) || 0;
+      
+      // Pisahkan agregasi PickUp vs Drop
+      if (isPickUp) totalPurePU += paket;
+      if (isDrop) totalPureDrop += paket;
+
+      // Hitung SLA (Selisih Jam Tiba dan ETA)
+      let delay = 0;
+      if (d['ETA'] && d['ETA'] !== '-' && d['Jam Tiba'] && d['Jam Tiba'] !== '-') {
+         const [eh, em] = d['ETA'].split(':').map(Number);
+         const [th, tm] = d['Jam Tiba'].split(':').map(Number);
+         delay = (th * 60 + tm) - (eh * 60 + em);
+      }
+      
+      if (delay <= 0) onTimeCount++;
+      if (delay > 0) {
+          totalDelayMins += delay;
+          delayCount++;
+      }
+
+      // Grouping untuk Tab Rute (Load & SLA)
+      if (!routeMap[rute]) routeMap[rute] = { points: 0, pu: 0, drop: 0, onTime: 0, totalDelay: 0, delayCount: 0 };
+      routeMap[rute].points++;
+      if (isPickUp) routeMap[rute].pu += paket;
+      if (isDrop) routeMap[rute].drop += paket;
+      if (delay <= 0) routeMap[rute].onTime++;
+      if (delay > 0) { routeMap[rute].totalDelay += delay; routeMap[rute].delayCount++; }
+
+      // Data untuk Tab Point
+      let statusText = 'ON-TIME';
+      if (delay > 0) statusText = `LATE ${delay}m`;
+      else if (d['ETA'] === '-') statusText = 'NO-ETA';
+
+      pointRows.push({
+         name: d['Nama Toko / SS'] || 'Unknown',
+         visit: d['Jam Tiba'] || '-',
+         puDrop: `${isPickUp ? paket : 0} / ${isDrop ? paket : 0}`,
+         mbBp: `${d['MB'] || 0} / ${d['BP'] || 0}`,
+         status: statusText
+      });
+    });
+
+    const tripCount = tripSet.size;
+    const totalWorkloadEffort = filtered.length;
+    const overallSlaPct = totalWorkloadEffort > 0 ? Math.round((onTimeCount / totalWorkloadEffort) * 100) : 0;
+    const overallLoadPct = tripCount > 0 ? Math.min(100, Math.round(((totalPurePU + totalPureDrop) / (tripCount * 150)) * 100)) : 0;
+
+    // Format Data Rute
+    const routeRows = Object.keys(routeMap).map(rute => {
+       const r = routeMap[rute];
+       const sla = r.points > 0 ? Math.round((r.onTime / r.points) * 100) : 0;
+       const avgDelay = r.delayCount > 0 ? Math.round(r.totalDelay / r.delayCount) : 0;
+       const load = r.pu + r.drop;
+       let status = 'OPTIMAL';
+       if (sla < 80) status = 'CRITICAL';
+       else if (sla < 95) status = 'WARNING';
+
+       return {
+          code: rute,
+          points: r.points,
+          puDrop: `${r.pu} / ${r.drop}`,
+          sla: `${sla}%`,
+          avgDelay: avgDelay > 0 ? `+${avgDelay}m` : '0m',
+          load: load,
+          status: status
+       };
+    }).sort((a,b) => b.load - a.load);
+
+    // Format Data Grafik (Ambil Top 6 Rute dengan Load Terberat)
+    const topRoutes = routeRows.slice(0, 6);
+    const chartData = {
+       labels: topRoutes.map(r => r.code),
+       workloads: topRoutes.map(r => r.load),
+       slas: topRoutes.map(r => parseInt(r.sla.replace('%', '')))
+    };
+
+    setDashboardData({
+       kpi: { tripCount, totalPurePU, totalPureDrop, totalWorkloadEffort, overallSlaPct, overallLoadPct },
+       routeRows,
+       pointRows,
+       chartData
+    });
+
+    if (routeRows.length > 0 && !selectedRouteCode) {
+       setSelectedRouteCode(routeRows[0].code);
+    }
+
+  }, [rawGasData, mode, selectedDate]);
 
   const filteredRoutes = dashboardData?.routeRows?.filter((r: any) => r.code.toLowerCase().includes(searchQuery.toLowerCase())) || [];
   const filteredPoints = dashboardData?.pointRows?.filter((p: any) => p.name.toLowerCase().includes(searchQuery.toLowerCase())) || [];
@@ -184,19 +287,13 @@ export default function App() {
 
   return (
     <>
-      {/* 
-        AMBIENT BACKGROUND (KUNCI LIQUID GLASS)
-        Ini akan diletakkan di layer paling belakang (z-index: -1) agar CSS asli Anda (Top Bar, Card Panel)
-        yang memiliki efek blur bisa menembus dan melihat warna-warna gradient ini.
-      */}
       <style>{`
         .ambient-bg {
           position: fixed; inset: 0; z-index: -1;
           background: radial-gradient(circle at 15% 30%, rgba(14, 165, 233, 0.15) 0%, transparent 40%),
                       radial-gradient(circle at 85% 70%, rgba(16, 185, 129, 0.1) 0%, transparent 40%),
-                      #070c1b; /* Warna base index.css */
+                      #070c1b;
         }
-        /* Penyesuaian agar CSS Panel asli Anda sedikit lebih transparan supaya efek kaca terasa */
         .card-panel { background: rgba(17, 24, 39, 0.6) !important; backdrop-filter: blur(12px) !important; -webkit-backdrop-filter: blur(12px) !important; }
         .sidebar { background: rgba(17, 24, 39, 0.6) !important; backdrop-filter: blur(16px) !important; -webkit-backdrop-filter: blur(16px) !important; }
         .kpi-card { background: rgba(17, 24, 39, 0.6) !important; backdrop-filter: blur(12px) !important; }
@@ -217,7 +314,6 @@ export default function App() {
 
       <div className={`sidebar ${isMobileMenuOpen ? 'open' : ''}`}>
         <h2>
-          {/* ICON BARU: Kotak Logistik Isometric Transparan */}
           <svg style={{ width: '24px', height: '24px', color: 'var(--app-accent)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
             <path strokeLinecap="round" strokeLinejoin="round" d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12" />
@@ -237,7 +333,7 @@ export default function App() {
           <label style={{ fontSize: '10px', color: 'var(--app-muted)', fontWeight: 700, display: 'block', marginBottom: '8px', letterSpacing: '0.5px' }}>📅 PERIODE ANALISIS</label>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
             <button className={`mode-btn ${mode === 'monthly' ? 'active' : ''}`} onClick={() => setMode('monthly')}>📈 Bulanan</button>
-            <button className={`mode-btn ${mode === 'daily' ? 'active' : ''}`}>📅 Harian</button>
+            <button className={`mode-btn ${mode === 'daily' ? 'active' : ''}`} onClick={() => setMode('daily')}>📅 Harian</button>
           </div>
           <div className="sidebar-calendar">
             <div className="cal-header-mini">
@@ -289,8 +385,8 @@ export default function App() {
           
           <div className="kpi-grid">
             <div className="kpi-card"><div className="title">Total Trip</div><div className="value">{dashboardData?.kpi?.tripCount || '0'}</div><div className="subtext">Unit Aktif</div></div>
-            <div className="kpi-card"><div className="title">Pure Pick-Up</div><div className="value">{dashboardData?.kpi?.totalPurePU || '0'}</div><div className="subtext">Pengambilan</div></div>
-            <div className="kpi-card"><div className="title">Pure Drop SS</div><div className="value">{dashboardData?.kpi?.totalPureDrop || '0'}</div><div className="subtext">Penurunan</div></div>
+            <div className="kpi-card"><div className="title">Pure Pick-Up</div><div className="value" style={{ color: '#0ea5e9' }}>{dashboardData?.kpi?.totalPurePU || '0'}</div><div className="subtext">Pengambilan (Pkt)</div></div>
+            <div className="kpi-card"><div className="title">Pure Drop SS</div><div className="value" style={{ color: '#10b981' }}>{dashboardData?.kpi?.totalPureDrop || '0'}</div><div className="subtext">Penurunan (Pkt)</div></div>
             <div className="kpi-card"><div className="title">Total Workload</div><div className="value">{dashboardData?.kpi?.totalWorkloadEffort || '0'}</div><div className="subtext">Points Visit</div></div>
             <div className="kpi-card"><div className="title">SLA On-Time</div><div className="value">{dashboardData?.kpi?.overallSlaPct || '0'}%</div><div className="subtext">Aman (No Delay)</div></div>
             <div className="kpi-card"><div className="title">Real Load Factor</div><div className="value">{dashboardData?.kpi?.overallLoadPct || '0'}%</div><div className="subtext">Eq-PU Volume</div></div>
@@ -299,21 +395,21 @@ export default function App() {
           {activeMenu === 'overview' && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
               <div className="card-panel">
-                <div className="panel-header"><h3>🍰 Distribusi Workload</h3></div>
+                <div className="panel-header"><h3>🍰 Distribusi Workload Top Rute</h3></div>
                 {dashboardData?.chartData ? (
                   <div style={{ position: 'relative', width: '100%', height: '240px' }}>
                     <Doughnut data={{ labels: dashboardData.chartData.labels, datasets: [{ data: dashboardData.chartData.workloads, backgroundColor: ['#0ea5e9', '#38bdf8', '#f59e0b', '#10b981', '#6366f1', '#ec4899'], borderWidth: 0 }] }} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1' } } } }} />
                   </div>
-                ) : <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Loading grafik...</p>}
+                ) : <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Menyiapkan grafik...</p>}
               </div>
 
               <div className="card-panel">
-                <div className="panel-header"><h3>📈 SLA On-Time (%)</h3></div>
+                <div className="panel-header"><h3>📈 SLA On-Time per Rute (%)</h3></div>
                 {dashboardData?.chartData ? (
                   <div style={{ position: 'relative', width: '100%', height: '240px' }}>
                     <Bar data={{ labels: dashboardData.chartData.labels, datasets: [{ label: 'SLA (%)', data: dashboardData.chartData.slas, backgroundColor: '#0ea5e9', borderRadius: 4 }] }} options={{ responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#cbd5e1' } }, x: { grid: { display: false }, ticks: { color: '#cbd5e1' } } }, plugins: { legend: { display: false } } }} />
                   </div>
-                ) : <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Loading grafik...</p>}
+                ) : <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Menyiapkan grafik...</p>}
               </div>
             </div>
           )}
@@ -325,7 +421,7 @@ export default function App() {
               <div style={{ overflowX: 'auto', padding: '0 20px 20px 20px' }}>
                 <table className="desktop-table-view" style={{ width: '100%', minWidth: '700px', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr><th>RUTE</th><th>POINT</th><th>PURE PU/DROP</th><th>SLA %</th><th>AVG DELAY</th><th>NET LOAD %</th><th>STATUS</th></tr>
+                    <tr><th>RUTE</th><th>POINT</th><th>PU / DROP</th><th>SLA %</th><th>AVG DELAY</th><th>NET LOAD (PKT)</th><th>STATUS</th></tr>
                   </thead>
                   <tbody>
                     {filteredRoutes.map((r: any, i: number) => (
@@ -352,7 +448,7 @@ export default function App() {
               <div style={{ overflowX: 'auto', padding: '0 20px 20px 20px' }}>
                 <table className="desktop-table-view" style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr><th>NAMA POINT</th><th>VISIT</th><th>PURE PU/DROP</th><th>MB & BP DETAIL</th><th>STATUS</th></tr>
+                    <tr><th>NAMA POINT / SS</th><th>VISIT</th><th>PU / DROP</th><th>MB & BP DETAIL</th><th>STATUS</th></tr>
                   </thead>
                   <tbody>
                     {filteredPoints.map((p: any, i: number) => (
