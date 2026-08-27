@@ -20,12 +20,10 @@ ChartJS.register(
   LinearScale
 );
 
-// --- HELPER FORMAT TANGGAL ROBUST (ANTI TIMEZONE SHIFT) ---
+// --- HELPER FORMAT TANGGAL ROBUST ---
 const formatDateKey = (val: any) => {
   if (!val) return '';
   const str = String(val);
-  
-  // Jika berupa objek Date atau string ISO dari GSheet, parsing menggunakan local time
   const d = new Date(val);
   if (!isNaN(d.getTime())) {
     const y = d.getFullYear();
@@ -33,7 +31,6 @@ const formatDateKey = (val: any) => {
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
   }
-  
   return str.substring(0, 10);
 };
 
@@ -130,7 +127,7 @@ export default function App() {
   const timeString = time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const dateString = time.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
-  // 1. FETCH RAW DATA DARI API GOOGLE APPS SCRIPT
+  // 1. FETCH RAW DATA
   useEffect(() => {
     const fetchRawData = async () => {
       setIsLoading(true);
@@ -151,11 +148,10 @@ export default function App() {
     fetchRawData();
   }, []);
 
-  // 2. OLAH & PROSES DATA SESUAI HEADER GSHEET YANG AKURAT
+  // 2. OLAH & PROSES DATA + ANALISIS KALKULASI AI UNIT KAPASITAS
   useEffect(() => {
     if (!rawGasData || rawGasData.length === 0) return;
 
-    // Filter Periode (Bulanan vs Harian)
     const filtered = mode === 'monthly'
       ? rawGasData
       : rawGasData.filter((d: any) => {
@@ -171,16 +167,17 @@ export default function App() {
     let delayCount = 0;
 
     let routeMap: any = {};
+    let unitCapacityMap: any = {}; // AI Analytics untuk Tipe Unit
     let pointRows: any[] = [];
 
     filtered.forEach((d: any) => {
       const rute = String(d['Kode Rute'] || 'UNASSIGNED').trim();
       const driver = String(d['Satmob/Driver'] || '-').trim();
+      const unitType = String(d['Tipe Unit'] || 'Standard').trim();
       const tgl = d['Tanggal Ops'] || '';
       const dateRute = `${tgl}_${rute}_${driver}`;
       tripSet.add(dateRute);
 
-      // Kategori & Jumlah PU
       const kategori = String(d['Kategori'] || '').toLowerCase();
       const isPickUp = kategori.includes('pickup') || kategori.includes('pick');
       const isDrop = kategori.includes('ss') || kategori.includes('drop');
@@ -189,6 +186,13 @@ export default function App() {
       
       if (isPickUp) totalPurePU += paket;
       if (isDrop) totalPureDrop += paket;
+
+      // Kalkulasi Kapasitas per Tipe Unit (Analisis AI)
+      if (!unitCapacityMap[unitType]) {
+        unitCapacityMap[unitType] = { totalLoad: 0, tripCount: new Set() };
+      }
+      unitCapacityMap[unitType].totalLoad += paket;
+      unitCapacityMap[unitType].tripCount.add(dateRute);
 
       // SLA (ETA vs ATA)
       const eta = d['ETA'] ? String(d['ETA']) : '-';
@@ -217,17 +221,12 @@ export default function App() {
       if (delay <= 0) routeMap[rute].onTime++;
       if (delay > 0) { routeMap[rute].totalDelay += delay; routeMap[rute].delayCount++; }
 
-      // Point Visit Rows
-      let statusText = 'ON-TIME';
-      if (delay > 0) statusText = `LATE ${delay}m`;
-      else if (eta === '-') statusText = 'NO-ETA';
-
       pointRows.push({
          name: d['Pin Point'] || 'Unknown',
          visit: ata,
          puDrop: `${isPickUp ? paket : 0} / ${isDrop ? paket : 0}`,
          mbBp: `${d['MB'] || 0} / ${d['BP'] || 0}`,
-         status: statusText
+         status: delay > 0 ? `LATE ${delay}m` : 'ON-TIME'
       });
     });
 
@@ -257,19 +256,29 @@ export default function App() {
        };
     }).sort((a,b) => b.load - a.load);
 
-    // Chart Data (Distribusi Rute Keseluruhan)
-    const topRoutes = routeRows.slice(0, 6);
+    // AI Analytics: Hitung Rekomendasi Efisiensi Tipe Unit
+    const unitInsights = Object.keys(unitCapacityMap).map(uType => {
+       const uData = unitCapacityMap[uType];
+       const trips = uData.tripCount.size;
+       const avgPerTrip = trips > 0 ? Math.round(uData.totalLoad / trips) : 0;
+       // Standar asumsi kapasitas ideal per trip unit bulky (misal: 150 paket max)
+       const efficiency = Math.min(100, Math.round((avgPerTrip / 150) * 100));
+       return { type: uType, trips, totalLoad: uData.totalLoad, avgPerTrip, efficiency };
+    });
+
+    // Chart Data (MENAMPILKAN SELURUH RUTE TANPA .slice() AGAR FULL)
     const chartData = {
-       labels: topRoutes.map(r => r.code),
-       workloads: topRoutes.map(r => r.load),
-       slas: topRoutes.map(r => parseInt(r.sla.replace('%', '')))
+       labels: routeRows.map(r => r.code),
+       workloads: routeRows.map(r => r.load),
+       slas: routeRows.map(r => parseInt(r.sla.replace('%', '')))
     };
 
     setDashboardData({
        kpi: { tripCount, totalPurePU, totalPureDrop, totalWorkloadEffort, overallSlaPct, overallLoadPct },
        routeRows,
        pointRows,
-       chartData
+       chartData,
+       unitInsights
     });
 
     if (routeRows.length > 0 && !selectedRouteCode) {
@@ -419,25 +428,60 @@ export default function App() {
           </div>
 
           {activeMenu === 'overview' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
-              <div className="card-panel">
-                <div className="panel-header"><h3>🍰 Distribusi Workload Top Rute</h3></div>
-                {dashboardData?.chartData?.labels?.length > 0 ? (
-                  <div style={{ position: 'relative', width: '100%', height: '240px' }}>
-                    <Doughnut data={{ labels: dashboardData.chartData.labels, datasets: [{ data: dashboardData.chartData.workloads, backgroundColor: ['#0ea5e9', '#38bdf8', '#f59e0b', '#10b981', '#6366f1', '#ec4899'], borderWidth: 0 }] }} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1' } } } }} />
-                  </div>
-                ) : <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Belum ada data rute untuk ditampilkan</p>}
+            <>
+              {/* GRAFIK OVERVIEW (FULL KONTEN) */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+                <div className="card-panel">
+                  <div className="panel-header"><h3>🍰 Distribusi Workload Seluruh Rute</h3></div>
+                  {dashboardData?.chartData?.labels?.length > 0 ? (
+                    <div style={{ position: 'relative', width: '100%', height: '260px' }}>
+                      <Doughnut data={{ labels: dashboardData.chartData.labels, datasets: [{ data: dashboardData.chartData.workloads, backgroundColor: ['#0ea5e9', '#38bdf8', '#f59e0b', '#10b981', '#6366f1', '#ec4899', '#f43f5e', '#8b5cf6', '#14b8a6'], borderWidth: 0 }] }} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1', boxWidth: 12, font: { size: 10 } } } } }} />
+                    </div>
+                  ) : <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Belum ada data rute untuk ditampilkan</p>}
+                </div>
+
+                <div className="card-panel">
+                  <div className="panel-header"><h3>📈 SLA On-Time per Rute (%)</h3></div>
+                  {dashboardData?.chartData?.labels?.length > 0 ? (
+                    <div style={{ position: 'relative', width: '100%', height: '260px' }}>
+                      <Bar data={{ labels: dashboardData.chartData.labels, datasets: [{ label: 'SLA (%)', data: dashboardData.chartData.slas, backgroundColor: '#0ea5e9', borderRadius: 4 }] }} options={{ responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#cbd5e1' } }, x: { grid: { display: false }, ticks: { color: '#cbd5e1', font: { size: 10 } } } }, plugins: { legend: { display: false } } }} />
+                    </div>
+                  ) : <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Belum ada data SLA untuk ditampilkan</p>}
+                </div>
               </div>
 
-              <div className="card-panel">
-                <div className="panel-header"><h3>📈 SLA On-Time per Rute (%)</h3></div>
-                {dashboardData?.chartData?.labels?.length > 0 ? (
-                  <div style={{ position: 'relative', width: '100%', height: '240px' }}>
-                    <Bar data={{ labels: dashboardData.chartData.labels, datasets: [{ label: 'SLA (%)', data: dashboardData.chartData.slas, backgroundColor: '#0ea5e9', borderRadius: 4 }] }} options={{ responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#cbd5e1' } }, x: { grid: { display: false }, ticks: { color: '#cbd5e1' } } }, plugins: { legend: { display: false } } }} />
-                  </div>
-                ) : <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Belum ada data SLA untuk ditampilkan</p>}
+              {/* 🧠 FITUR ANALISIS AI: KALKULASI KAPASITAS & EFISIENSI ARMADA PER TIPE UNIT */}
+              <div className="card-panel" style={{ padding: '20px' }}>
+                <div className="panel-header" style={{ marginBottom: '12px' }}>
+                  <h3 style={{ color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    🤖 AI Control Tower: Analisis Efisiensi & Kapasitas Tipe Unit
+                  </h3>
+                  <span style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Rekomendasi kalkulasi muatan otomatis berdasarkan performa armada harian/bulanan</span>
+                </div>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px', marginTop: '14px' }}>
+                  {dashboardData?.unitInsights?.map((u: any, idx: number) => (
+                    <div key={idx} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '10px', padding: '14px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <span style={{ fontWeight: 'bold', color: '#f8fafc', fontSize: '13px' }}>🚐 Tipe: {u.type}</span>
+                        <span className={`badge ${u.efficiency >= 80 ? 'badge-optimal' : 'badge-warning'}`}>{u.efficiency}% Efisiensi</span>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11px', color: '#94a3b8' }}>
+                        <span>Total Trip: <strong style={{ color: '#fff' }}>{u.trips} Trip</strong></span>
+                        <span>Akumulasi Muatan: <strong style={{ color: '#38bdf8' }}>{u.totalLoad} Paket</strong></span>
+                        <span>Rata-rata per Trip: <strong style={{ color: '#fbbf24' }}>{u.avgPerTrip} Pkt / Trip</strong></span>
+                      </div>
+                      <div style={{ marginTop: '10px', fontSize: '10px', padding: '6px 8px', borderRadius: '6px', background: u.efficiency >= 80 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)', color: u.efficiency >= 80 ? '#34d399' : '#fbbf24' }}>
+                        {u.efficiency >= 80 ? '✨ Beban muatan optimal & seimbang.' : '⚠️ Kapasitas armada belum maksimal, pertimbangkan konsolidasi rute.'}
+                      </div>
+                    </div>
+                  ))}
+                  {(!dashboardData?.unitInsights || dashboardData.unitInsights.length === 0) && (
+                    <div style={{ color: 'var(--app-muted)', fontSize: '11px' }}>Memproses data unit kendaraan...</div>
+                  )}
+                </div>
               </div>
-            </div>
+            </>
           )}
 
           {activeMenu === 'routes' && (
