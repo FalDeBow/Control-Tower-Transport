@@ -20,7 +20,7 @@ ChartJS.register(
   LinearScale
 );
 
-// --- KOMPONEN ACCORDION (MOBILE) - PRESISI SEPERTI TABEL ---
+// --- KOMPONEN ACCORDION (MOBILE) ---
 const RouteAccordion = ({ rute, badgeClass }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
@@ -101,7 +101,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [pinSearchQuery, setPinSearchQuery] = useState('');
   const [mode, setMode] = useState('monthly');
-  const [selectedDate, setSelectedDate] = useState('2026-08-26');
+  const [selectedDate, setSelectedDate] = useState('2026-08-27');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedRouteCode, setSelectedRouteCode] = useState('');
 
@@ -113,7 +113,7 @@ export default function App() {
   const timeString = time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const dateString = time.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
-  // 1. FETCH RAW DATA API
+  // 1. FETCH RAW DATA DARI API GOOGLE APPS SCRIPT
   useEffect(() => {
     const fetchRawData = async () => {
       setIsLoading(true);
@@ -134,14 +134,17 @@ export default function App() {
     fetchRawData();
   }, []);
 
-  // 2. PROSES & AGREGASI DATA (Pemisahan Pickup & Drop dilakukan di sini)
+  // 2. OLAH & PROSES DATA BERDASARKAN HEADER GSHEET MAS BOWO
   useEffect(() => {
     if (!rawGasData || rawGasData.length === 0) return;
 
-    // Filter berdasarkan mode (Bulanan vs Harian)
+    // Filter Periode (Bulanan vs Harian)
     const filtered = mode === 'monthly'
       ? rawGasData
-      : rawGasData.filter((d: any) => String(d['Tanggal Operasional']).substring(0, 10) === selectedDate);
+      : rawGasData.filter((d: any) => {
+          const tgl = String(d['Tanggal Ops'] || d['Tanggal Operasional'] || '');
+          return tgl.substring(0, 10) === selectedDate;
+        });
 
     let tripSet = new Set();
     let totalPurePU = 0;
@@ -154,27 +157,32 @@ export default function App() {
     let pointRows: any[] = [];
 
     filtered.forEach((d: any) => {
-      const rute = d['Rute Armada'] || 'UNASSIGNED';
-      const dateRute = `${d['Tanggal Operasional']}_${rute}_${d['Driver (Satmob)']}`;
+      const rute = d['Kode Rute'] || d['Rute Armada'] || 'UNASSIGNED';
+      const driver = d['Satmob/Driver'] || d['Driver (Satmob)'] || '-';
+      const tgl = d['Tanggal Ops'] || d['Tanggal Operasional'] || '-';
+      const dateRute = `${tgl}_${rute}_${driver}`;
       tripSet.add(dateRute);
 
-      // Identifikasi tipe baris
-      const tipeTask = (d['Tipe Task'] || '').toLowerCase();
-      const isPickUp = tipeTask.includes('pickup');
-      const isDrop = tipeTask.includes('ss') || tipeTask.includes('drop');
+      // Kategori: Pengecekan Kategori / Tipe Task
+      const kategori = (d['Kategori'] || d['Tipe Task'] || '').toLowerCase();
+      const isPickUp = kategori.includes('pickup') || kategori.includes('pick');
+      const isDrop = kategori.includes('ss') || kategori.includes('drop');
       
-      const paket = Number(d['Paket']) || 0;
+      const paket = Number(d['Jumlah PU'] || d['Paket']) || 0;
       
-      // Pisahkan agregasi PickUp vs Drop
       if (isPickUp) totalPurePU += paket;
       if (isDrop) totalPureDrop += paket;
 
-      // Hitung SLA (Selisih Jam Tiba dan ETA)
+      // Perhitungan Delay SLA (ATA vs ETA)
+      const eta = d['ETA'] || '-';
+      const ata = d['ATA'] || d['Jam Tiba'] || '-';
       let delay = 0;
-      if (d['ETA'] && d['ETA'] !== '-' && d['Jam Tiba'] && d['Jam Tiba'] !== '-') {
-         const [eh, em] = d['ETA'].split(':').map(Number);
-         const [th, tm] = d['Jam Tiba'].split(':').map(Number);
-         delay = (th * 60 + tm) - (eh * 60 + em);
+      if (eta !== '-' && ata !== '-' && eta && ata) {
+         const [eh, em] = eta.split(':').map(Number);
+         const [th, tm] = ata.split(':').map(Number);
+         if (!isNaN(eh) && !isNaN(th)) {
+           delay = (th * 60 + tm) - (eh * 60 + em);
+         }
       }
       
       if (delay <= 0) onTimeCount++;
@@ -183,7 +191,7 @@ export default function App() {
           delayCount++;
       }
 
-      // Grouping untuk Tab Rute (Load & SLA)
+      // Grouping Data Rute
       if (!routeMap[rute]) routeMap[rute] = { points: 0, pu: 0, drop: 0, onTime: 0, totalDelay: 0, delayCount: 0 };
       routeMap[rute].points++;
       if (isPickUp) routeMap[rute].pu += paket;
@@ -191,14 +199,14 @@ export default function App() {
       if (delay <= 0) routeMap[rute].onTime++;
       if (delay > 0) { routeMap[rute].totalDelay += delay; routeMap[rute].delayCount++; }
 
-      // Data untuk Tab Point
+      // Data Tab Point Visit
       let statusText = 'ON-TIME';
       if (delay > 0) statusText = `LATE ${delay}m`;
-      else if (d['ETA'] === '-') statusText = 'NO-ETA';
+      else if (eta === '-') statusText = 'NO-ETA';
 
       pointRows.push({
-         name: d['Nama Toko / SS'] || 'Unknown',
-         visit: d['Jam Tiba'] || '-',
+         name: d['Pin Point'] || d['Nama Toko / SS'] || 'Unknown',
+         visit: ata,
          puDrop: `${isPickUp ? paket : 0} / ${isDrop ? paket : 0}`,
          mbBp: `${d['MB'] || 0} / ${d['BP'] || 0}`,
          status: statusText
@@ -210,7 +218,7 @@ export default function App() {
     const overallSlaPct = totalWorkloadEffort > 0 ? Math.round((onTimeCount / totalWorkloadEffort) * 100) : 0;
     const overallLoadPct = tripCount > 0 ? Math.min(100, Math.round(((totalPurePU + totalPureDrop) / (tripCount * 150)) * 100)) : 0;
 
-    // Format Data Rute
+    // Rekap Data Rute
     const routeRows = Object.keys(routeMap).map(rute => {
        const r = routeMap[rute];
        const sla = r.points > 0 ? Math.round((r.onTime / r.points) * 100) : 0;
@@ -231,7 +239,7 @@ export default function App() {
        };
     }).sort((a,b) => b.load - a.load);
 
-    // Format Data Grafik (Ambil Top 6 Rute dengan Load Terberat)
+    // Data Grafik (Top 6 Rute)
     const topRoutes = routeRows.slice(0, 6);
     const chartData = {
        labels: topRoutes.map(r => r.code),
