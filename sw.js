@@ -8,7 +8,6 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  // Bypass cache untuk fetch data live dari GAS
   if (e.request.url.includes('script.google.com')) {
     e.respondWith(fetch(e.request));
   } else {
