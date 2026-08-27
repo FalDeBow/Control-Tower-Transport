@@ -19,13 +19,12 @@
 
 html, body, #root {
   width: 100%;
-  min-height: 100dvh; /* Menggunakan Dynamic Viewport Height agar pas di layar HP */
+  min-height: 100dvh;
   margin: 0;
   padding: 0;
   background-color: #070c1b;
   color: #f8fafc;
   overflow-x: hidden;
-  -webkit-tap-highlight-color: transparent;
 }
 
 .main-content {
