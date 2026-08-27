@@ -20,13 +20,18 @@ ChartJS.register(
   LinearScale
 );
 
-// --- HELPER FORMAT TANGGAL YANG AMAN ---
+// --- HELPER FORMAT TANGGAL ANTI-TIMEZONE SHIFT ---
 const formatDateKey = (val: any) => {
   if (!val) return '';
   const str = String(val);
-  if (str.length >= 10 && str[4] === '-' && str[7] === '-') {
-    return str.substring(0, 10);
+  
+  // Ambil langsung pola YYYY-MM-DD dari string tanpa konversi timezone
+  const match = str.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    return `${match[1]}-${match[2]}-${match[3]}`;
   }
+
+  // Fallback jika format berbeda
   const parsed = new Date(str);
   if (!isNaN(parsed.getTime())) {
     const y = parsed.getFullYear();
@@ -34,6 +39,7 @@ const formatDateKey = (val: any) => {
     const d = String(parsed.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
   }
+  
   return str.substring(0, 10);
 };
 
