@@ -2,7 +2,6 @@
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
-    <!-- HAPUS SEMUA YANG ADA TULISAN %PUBLIC_URL% -->
     <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
     <link rel="manifest" href="/manifest.json" />
     
@@ -17,7 +16,7 @@
   <body>
     <div id="root"></div>
     
-    <!-- INI WAJIB ADA UNTUK VITE (Menghubungkan ke main.tsx) -->
-    <script type="module" src="/src/main.tsx"></script>
+    <!-- FIX: Jalur main.tsx diarahkan ke root, bukan ke /src/ -->
+    <script type="module" src="/main.tsx"></script>
   </body>
 </html>
