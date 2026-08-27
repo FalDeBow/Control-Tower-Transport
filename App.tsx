@@ -20,6 +20,23 @@ ChartJS.register(
   LinearScale
 );
 
+// --- HELPER FORMAT TANGGAL YANG AMAN ---
+const formatDateKey = (val: any) => {
+  if (!val) return '';
+  const str = String(val);
+  if (str.length >= 10 && str[4] === '-' && str[7] === '-') {
+    return str.substring(0, 10);
+  }
+  const parsed = new Date(str);
+  if (!isNaN(parsed.getTime())) {
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, '0');
+    const d = String(parsed.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  return str.substring(0, 10);
+};
+
 // --- KOMPONEN ACCORDION (MOBILE) ---
 const RouteAccordion = ({ rute, badgeClass }: any) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -134,16 +151,16 @@ export default function App() {
     fetchRawData();
   }, []);
 
-  // 2. OLAH & PROSES DATA BERDASARKAN HEADER GSHEET MAS BOWO
+  // 2. OLAH & PROSES DATA DENGAN FORMAT TANGGAL YANG AKURAT
   useEffect(() => {
     if (!rawGasData || rawGasData.length === 0) return;
 
-    // Filter Periode (Bulanan vs Harian)
+    // Filter Periode (Bulanan vs Harian) menggunakan formatDateKey
     const filtered = mode === 'monthly'
       ? rawGasData
       : rawGasData.filter((d: any) => {
-          const tgl = String(d['Tanggal Ops'] || d['Tanggal Operasional'] || '');
-          return tgl.substring(0, 10) === selectedDate;
+          const rawTgl = d['Tanggal Ops'] || d['Tanggal Operasional'] || '';
+          return formatDateKey(rawTgl) === selectedDate;
         });
 
     let tripSet = new Set();
@@ -164,7 +181,7 @@ export default function App() {
       tripSet.add(dateRute);
 
       // Kategori: Pengecekan Kategori / Tipe Task
-      const kategori = (d['Kategori'] || d['Tipe Task'] || '').toLowerCase();
+      const kategori = String(d['Kategori'] || d['Tipe Task'] || '').toLowerCase();
       const isPickUp = kategori.includes('pickup') || kategori.includes('pick');
       const isDrop = kategori.includes('ss') || kategori.includes('drop');
       
@@ -173,11 +190,12 @@ export default function App() {
       if (isPickUp) totalPurePU += paket;
       if (isDrop) totalPureDrop += paket;
 
-      // Perhitungan Delay SLA (ATA vs ETA)
-      const eta = d['ETA'] || '-';
-      const ata = d['ATA'] || d['Jam Tiba'] || '-';
+      // Perhitungan Delay SLA (ATA vs ETA) dengan pengaman string
+      const eta = d['ETA'] ? String(d['ETA']) : '-';
+      const ata = d['ATA'] || d['Jam Tiba'] ? String(d['ATA'] || d['Jam Tiba']) : '-';
       let delay = 0;
-      if (eta !== '-' && ata !== '-' && eta && ata) {
+      
+      if (eta !== '-' && ata !== '-' && eta.includes(':') && ata.includes(':')) {
          const [eh, em] = eta.split(':').map(Number);
          const [th, tm] = ata.split(':').map(Number);
          if (!isNaN(eh) && !isNaN(th)) {
