@@ -148,7 +148,7 @@ export default function App() {
     fetchRawData();
   }, []);
 
-  // 2. OLAH & ANALISIS DATA LEVEL LANJUTAN (AI TREND & UNIT CAPACITY)
+  // 2. OLAH & ANALISIS DATA MULTI-DIMENSI (AI INSIGHTS)
   useEffect(() => {
     if (!rawGasData || rawGasData.length === 0) return;
 
@@ -168,7 +168,7 @@ export default function App() {
 
     let routeMap: any = {};
     let unitCapacityMap: any = {}; 
-    let pointTrendMap: any = {}; // Untuk analisis tren naik/turun per Pickup Point
+    let pointTrendMap: any = {};
     let pointRows: any[] = [];
 
     rawGasData.forEach((d: any) => {
@@ -176,12 +176,8 @@ export default function App() {
       const tgl = formatDateKey(d['Tanggal Ops'] || '');
       const paket = Number(d['Jumlah PU']) || 0;
 
-      if (!pointTrendMap[pinPoint]) {
-        pointTrendMap[pinPoint] = { dates: {}, total: 0 };
-      }
-      if (!pointTrendMap[pinPoint].dates[tgl]) {
-        pointTrendMap[pinPoint].dates[tgl] = 0;
-      }
+      if (!pointTrendMap[pinPoint]) pointTrendMap[pinPoint] = { dates: {}, total: 0 };
+      if (!pointTrendMap[pinPoint].dates[tgl]) pointTrendMap[pinPoint].dates[tgl] = 0;
       pointTrendMap[pinPoint].dates[tgl] += paket;
       pointTrendMap[pinPoint].total += paket;
     });
@@ -203,7 +199,6 @@ export default function App() {
       if (isPickUp) totalPurePU += paket;
       if (isDrop) totalPureDrop += paket;
 
-      // Unit Capacity Tracking
       if (!unitCapacityMap[unitType]) {
         unitCapacityMap[unitType] = { totalLoad: 0, tripCount: new Set(), routes: new Set() };
       }
@@ -211,7 +206,6 @@ export default function App() {
       unitCapacityMap[unitType].tripCount.add(dateRute);
       unitCapacityMap[unitType].routes.add(rute);
 
-      // SLA
       const eta = d['ETA'] ? String(d['ETA']) : '-';
       const ata = d['ATA'] ? String(d['ATA']) : '-';
       let delay = 0;
@@ -271,7 +265,6 @@ export default function App() {
        };
     }).sort((a,b) => b.load - a.load);
 
-    // AI Point Trend Analysis (Naik / Turun)
     const pointTrendHighlights = Object.keys(pointTrendMap).map(pointName => {
       const pData = pointTrendMap[pointName];
       const dates = Object.keys(pData.dates).sort();
@@ -292,7 +285,6 @@ export default function App() {
       };
     }).sort((a, b) => Math.abs(b.recentChange) - Math.abs(a.recentChange)).slice(0, 5);
 
-    // AI Unit Insights
     const unitInsights = Object.keys(unitCapacityMap).map(uType => {
        const uData = unitCapacityMap[uType];
        const trips = uData.tripCount.size;
@@ -391,20 +383,20 @@ export default function App() {
 
       <div className={`sidebar ${isMobileMenuOpen ? 'open' : ''}`}>
         <h2>
-          <svg style={{ width: '24px', height: '24px', color: 'var(--app-accent)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+          <svg style={{ width: '22px', height: '22px', color: 'var(--app-accent)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
             <path strokeLinecap="round" strokeLinejoin="round" d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 22.08V12" />
           </svg>
           <span style={{ marginLeft: '8px', flex: 1, letterSpacing: '1.5px' }}>TR-GLASS</span>
         </h2>
 
+        {/* MENU RINGKAS & ESTETIK DENGAN IKON */}
         <div className="nav-menu">
-          <div className={`nav-item ${activeMenu === 'overview' ? 'active' : ''}`} onClick={() => handleMenuClick('overview')}>📊 Dashboard Overview</div>
-          <div className={`nav-item ${activeMenu === 'units' ? 'active' : ''}`} onClick={() => handleMenuClick('units')}>🚐 AI Unit Analytics</div>
-          <div className={`nav-item ${activeMenu === 'routes' ? 'active' : ''}`} onClick={() => handleMenuClick('routes')}>🚚 Load & SLA</div>
-          <div className={`nav-item ${activeMenu === 'points' ? 'active' : ''}`} onClick={() => handleMenuClick('points')}>📍 Info Point Task</div>
-          <div className={`nav-item ${activeMenu === 'geotag' ? 'active' : ''}`} onClick={() => handleMenuClick('geotag')}>🗺️ GPS History</div>
+          <div className={`nav-item ${activeMenu === 'overview' ? 'active' : ''}`} onClick={() => handleMenuClick('overview')}>📊 Overview</div>
+          <div className={`nav-item ${activeMenu === 'units' ? 'active' : ''}`} onClick={() => handleMenuClick('units')}>🚐 Fleet AI</div>
+          <div className={`nav-item ${activeMenu === 'routes' ? 'active' : ''}`} onClick={() => handleMenuClick('routes')}>🚚 Route SLA</div>
+          <div className={`nav-item ${activeMenu === 'points' ? 'active' : ''}`} onClick={() => handleMenuClick('points')}>📍 Point AI Hub</div>
+          <div className={`nav-item ${activeMenu === 'geotag' ? 'active' : ''}`} onClick={() => handleMenuClick('geotag')}>🗺️ GPS Live</div>
         </div>
 
         <div style={{ marginTop: 'auto' }}>
@@ -472,7 +464,7 @@ export default function App() {
 
           {activeMenu === 'overview' && (
             <>
-              {/* HIGHLIGHT AI: TREN PARCEL NAIK / TURUN DI PICKUP POINT */}
+              {/* AI SPOTLIGHT TREND */}
               <div className="card-panel" style={{ padding: '20px', marginBottom: '20px' }}>
                 <div className="panel-header" style={{ marginBottom: '14px' }}>
                   <h3 style={{ color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -504,7 +496,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* GRAFIK OVERVIEW (FULL KONTEN) */}
+              {/* GRAFIK OVERVIEW */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
                 <div className="card-panel">
                   <div className="panel-header"><h3>🍰 Distribusi Workload Seluruh Rute</h3></div>
@@ -556,21 +548,21 @@ export default function App() {
                     </div>
                   </div>
                 ))}
-                {(!dashboardData?.unitInsights || dashboardData.unitInsights.length === 0) && (
-                  <div style={{ color: 'var(--app-muted)', fontSize: '12px' }}>Memuat data analisis unit kendaraan...</div>
-                )}
               </div>
             </div>
           )}
 
           {activeMenu === 'routes' && (
             <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
-              <div className="panel-header" style={{ padding: '20px 20px 0 20px' }}><h3>🚚 Load & SLA per Rute</h3></div>
+              <div className="panel-header" style={{ padding: '20px 20px 0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3>🚚 Route SLA & AI Performance</h3>
+                <span style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', background: 'rgba(14, 165, 233, 0.15)', color: '#38bdf8' }}>🤖 AI Bot: {filteredRoutes.length} Rute Dipantau</span>
+              </div>
               
               <div style={{ overflowX: 'auto', padding: '0 20px 20px 20px' }}>
                 <table className="desktop-table-view" style={{ width: '100%', minWidth: '700px', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr><th>RUTE</th><th>POINT</th><th>PU / DROP</th><th>SLA %</th><th>AVG DELAY</th><th>NET LOAD (PKT)</th><th>STATUS</th></tr>
+                    <tr><th>RUTE</th><th>POINT</th><th>PU / DROP</th><th>SLA %</th><th>AVG DELAY</th><th>NET LOAD (PKT)</th><th>STATUS AI</th></tr>
                   </thead>
                   <tbody>
                     {filteredRoutes.map((r: any, i: number) => (
@@ -593,11 +585,14 @@ export default function App() {
 
           {activeMenu === 'points' && (
             <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
-              <div className="panel-header" style={{ padding: '20px 20px 0 20px' }}><h3>📍 Info Point Task</h3></div>
+              <div className="panel-header" style={{ padding: '20px 20px 0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3>📍 Point AI Hub (Pickup & Drop Intelligence)</h3>
+                <span style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399' }}>⚡ Live Trend Analysis</span>
+              </div>
               <div style={{ overflowX: 'auto', padding: '0 20px 20px 20px' }}>
                 <table className="desktop-table-view" style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr><th>NAMA POINT / SS</th><th>VISIT</th><th>PU / DROP</th><th>MB & BP DETAIL</th><th>STATUS</th></tr>
+                    <tr><th>NAMA POINT / SS</th><th>VISIT</th><th>PU / DROP</th><th>MB & BP DETAIL</th><th>AI STATUS</th></tr>
                   </thead>
                   <tbody>
                     {filteredPoints.map((p: any, i: number) => (
@@ -620,7 +615,7 @@ export default function App() {
           {activeMenu === 'geotag' && (
             <div className="card-panel">
               <div className="panel-header" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                <h3>🗺️ History Jalur Maps per Rute</h3>
+                <h3>🗺️ GPS Live & History Maps per Rute</h3>
                 <input type="text" placeholder="Cari Kode Rute..." value={pinSearchQuery} onChange={(e) => setPinSearchQuery(e.target.value)} style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: '#fff', fontSize: '11px', outline: 'none', width: '100%', maxWidth: '240px', fontFamily: 'monospace' }} />
               </div>
 
