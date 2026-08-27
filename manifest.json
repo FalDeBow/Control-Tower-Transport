@@ -3,13 +3,15 @@
   "name": "Transport Glass Logistics",
   "icons": [
     {
-      "src": "/favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='110' fill='%23070c1b'/><path d='M256 96L112 176v160l144 80 144-80V176L256 96z' fill='none' stroke='%230ea5e9' stroke-width='24' stroke-linejoin='round'/><path d='M256 96v240M112 176l144 80 144-80' fill='none' stroke='%2338bdf8' stroke-width='20' stroke-linejoin='round'/><circle cx='256' cy='256' r='48' fill='%2310b981'/></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ],
   "start_url": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "theme_color": "#070c1b",
   "background_color": "#070c1b"
 }
