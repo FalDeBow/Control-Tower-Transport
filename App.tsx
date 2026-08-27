@@ -20,24 +20,18 @@ ChartJS.register(
   LinearScale
 );
 
-// --- HELPER FORMAT TANGGAL ANTI-TIMEZONE SHIFT ---
+// --- HELPER FORMAT TANGGAL ROBUST (ANTI TIMEZONE SHIFT) ---
 const formatDateKey = (val: any) => {
   if (!val) return '';
   const str = String(val);
   
-  // Ambil langsung pola YYYY-MM-DD dari string tanpa konversi timezone
-  const match = str.match(/(\d{4})-(\d{2})-(\d{2})/);
-  if (match) {
-    return `${match[1]}-${match[2]}-${match[3]}`;
-  }
-
-  // Fallback jika format berbeda
-  const parsed = new Date(str);
-  if (!isNaN(parsed.getTime())) {
-    const y = parsed.getFullYear();
-    const m = String(parsed.getMonth() + 1).padStart(2, '0');
-    const d = String(parsed.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
+  // Jika berupa objek Date atau string ISO dari GSheet, parsing menggunakan local time
+  const d = new Date(val);
+  if (!isNaN(d.getTime())) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   }
   
   return str.substring(0, 10);
@@ -157,15 +151,15 @@ export default function App() {
     fetchRawData();
   }, []);
 
-  // 2. OLAH & PROSES DATA DENGAN FORMAT TANGGAL YANG AKURAT
+  // 2. OLAH & PROSES DATA SESUAI HEADER GSHEET YANG AKURAT
   useEffect(() => {
     if (!rawGasData || rawGasData.length === 0) return;
 
-    // Filter Periode (Bulanan vs Harian) menggunakan formatDateKey
+    // Filter Periode (Bulanan vs Harian)
     const filtered = mode === 'monthly'
       ? rawGasData
       : rawGasData.filter((d: any) => {
-          const rawTgl = d['Tanggal Ops'] || d['Tanggal Operasional'] || '';
+          const rawTgl = d['Tanggal Ops'] || '';
           return formatDateKey(rawTgl) === selectedDate;
         });
 
@@ -180,25 +174,25 @@ export default function App() {
     let pointRows: any[] = [];
 
     filtered.forEach((d: any) => {
-      const rute = d['Kode Rute'] || d['Rute Armada'] || 'UNASSIGNED';
-      const driver = d['Satmob/Driver'] || d['Driver (Satmob)'] || '-';
-      const tgl = d['Tanggal Ops'] || d['Tanggal Operasional'] || '-';
+      const rute = String(d['Kode Rute'] || 'UNASSIGNED').trim();
+      const driver = String(d['Satmob/Driver'] || '-').trim();
+      const tgl = d['Tanggal Ops'] || '';
       const dateRute = `${tgl}_${rute}_${driver}`;
       tripSet.add(dateRute);
 
-      // Kategori: Pengecekan Kategori / Tipe Task
-      const kategori = String(d['Kategori'] || d['Tipe Task'] || '').toLowerCase();
+      // Kategori & Jumlah PU
+      const kategori = String(d['Kategori'] || '').toLowerCase();
       const isPickUp = kategori.includes('pickup') || kategori.includes('pick');
       const isDrop = kategori.includes('ss') || kategori.includes('drop');
       
-      const paket = Number(d['Jumlah PU'] || d['Paket']) || 0;
+      const paket = Number(d['Jumlah PU']) || 0;
       
       if (isPickUp) totalPurePU += paket;
       if (isDrop) totalPureDrop += paket;
 
-      // Perhitungan Delay SLA (ATA vs ETA) dengan pengaman string
+      // SLA (ETA vs ATA)
       const eta = d['ETA'] ? String(d['ETA']) : '-';
-      const ata = d['ATA'] || d['Jam Tiba'] ? String(d['ATA'] || d['Jam Tiba']) : '-';
+      const ata = d['ATA'] ? String(d['ATA']) : '-';
       let delay = 0;
       
       if (eta !== '-' && ata !== '-' && eta.includes(':') && ata.includes(':')) {
@@ -215,7 +209,7 @@ export default function App() {
           delayCount++;
       }
 
-      // Grouping Data Rute
+      // Grouping per Rute
       if (!routeMap[rute]) routeMap[rute] = { points: 0, pu: 0, drop: 0, onTime: 0, totalDelay: 0, delayCount: 0 };
       routeMap[rute].points++;
       if (isPickUp) routeMap[rute].pu += paket;
@@ -223,13 +217,13 @@ export default function App() {
       if (delay <= 0) routeMap[rute].onTime++;
       if (delay > 0) { routeMap[rute].totalDelay += delay; routeMap[rute].delayCount++; }
 
-      // Data Tab Point Visit
+      // Point Visit Rows
       let statusText = 'ON-TIME';
       if (delay > 0) statusText = `LATE ${delay}m`;
       else if (eta === '-') statusText = 'NO-ETA';
 
       pointRows.push({
-         name: d['Pin Point'] || d['Nama Toko / SS'] || 'Unknown',
+         name: d['Pin Point'] || 'Unknown',
          visit: ata,
          puDrop: `${isPickUp ? paket : 0} / ${isDrop ? paket : 0}`,
          mbBp: `${d['MB'] || 0} / ${d['BP'] || 0}`,
@@ -242,7 +236,7 @@ export default function App() {
     const overallSlaPct = totalWorkloadEffort > 0 ? Math.round((onTimeCount / totalWorkloadEffort) * 100) : 0;
     const overallLoadPct = tripCount > 0 ? Math.min(100, Math.round(((totalPurePU + totalPureDrop) / (tripCount * 150)) * 100)) : 0;
 
-    // Rekap Data Rute
+    // Rekap Rute
     const routeRows = Object.keys(routeMap).map(rute => {
        const r = routeMap[rute];
        const sla = r.points > 0 ? Math.round((r.onTime / r.points) * 100) : 0;
@@ -263,7 +257,7 @@ export default function App() {
        };
     }).sort((a,b) => b.load - a.load);
 
-    // Data Grafik (Top 6 Rute)
+    // Chart Data (Distribusi Rute Keseluruhan)
     const topRoutes = routeRows.slice(0, 6);
     const chartData = {
        labels: topRoutes.map(r => r.code),
@@ -428,20 +422,20 @@ export default function App() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
               <div className="card-panel">
                 <div className="panel-header"><h3>🍰 Distribusi Workload Top Rute</h3></div>
-                {dashboardData?.chartData ? (
+                {dashboardData?.chartData?.labels?.length > 0 ? (
                   <div style={{ position: 'relative', width: '100%', height: '240px' }}>
                     <Doughnut data={{ labels: dashboardData.chartData.labels, datasets: [{ data: dashboardData.chartData.workloads, backgroundColor: ['#0ea5e9', '#38bdf8', '#f59e0b', '#10b981', '#6366f1', '#ec4899'], borderWidth: 0 }] }} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1' } } } }} />
                   </div>
-                ) : <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Menyiapkan grafik...</p>}
+                ) : <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Belum ada data rute untuk ditampilkan</p>}
               </div>
 
               <div className="card-panel">
                 <div className="panel-header"><h3>📈 SLA On-Time per Rute (%)</h3></div>
-                {dashboardData?.chartData ? (
+                {dashboardData?.chartData?.labels?.length > 0 ? (
                   <div style={{ position: 'relative', width: '100%', height: '240px' }}>
                     <Bar data={{ labels: dashboardData.chartData.labels, datasets: [{ label: 'SLA (%)', data: dashboardData.chartData.slas, backgroundColor: '#0ea5e9', borderRadius: 4 }] }} options={{ responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#cbd5e1' } }, x: { grid: { display: false }, ticks: { color: '#cbd5e1' } } }, plugins: { legend: { display: false } } }} />
                   </div>
-                ) : <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Menyiapkan grafik...</p>}
+                ) : <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Belum ada data SLA untuk ditampilkan</p>}
               </div>
             </div>
           )}
