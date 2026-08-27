@@ -17,9 +17,21 @@
 ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--app-accent); }
 
-html, body { width: 100%; max-width: 100vw; overflow-x: hidden; background-color: var(--app-bg); color: var(--app-text); }
-#root { display: flex; width: 100%; height: 100vh; overflow: hidden; }
+html, body, #root {
+  width: 100%;
+  min-height: 100dvh; /* Menggunakan Dynamic Viewport Height agar pas di layar HP */
+  margin: 0;
+  padding: 0;
+  background-color: #070c1b;
+  color: #f8fafc;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
 
+.main-content {
+  min-height: 100dvh;
+  box-sizing: border-box;
+}
 /* LOADER */
 #loaderOverlay {
   position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
