@@ -498,7 +498,13 @@ export default function App() {
         .kpi-card { background: rgba(17, 24, 39, 0.6) !important; backdrop-filter: blur(12px) !important; border: 1px solid rgba(255,255,255,0.04); }
         .selected-week { background: rgba(14, 165, 233, 0.3) !important; color: #fff !important; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.5); }
         
-        /* Sidebar Floating & Konten Diperlebar Sepenuhnya ke Kiri */
+        /* Kontainer dashboard diperlebar 100% tanpa batas max-width kaku agar full mengisi layar luas */
+        .dashboard-container {
+          width: 100% !important;
+          max-width: none !important;
+        }
+
+        /* Sidebar & Layout Utama Fluid */
         @media (min-width: 769px) {
           .sidebar-fixed {
             width: 64px; position: fixed; left: 0; top: 0; bottom: 0; z-index: 100;
@@ -506,8 +512,8 @@ export default function App() {
             border-right: 1px solid rgba(255,255,255,0.05);
             display: flex; flex-direction: column; align-items: center; padding-top: 20px;
           }
-          /* Menghilangkan margin-left besar dan menggantinya dengan padding pas setinggi sidebar (64px + 8px gap) */
-          .main-content { margin-left: 0 !important; padding: 16px 20px 16px 74px !important; transition: padding 0.3s; }
+          /* Konten menempel langsung di sebelah sidebar (64px + 12px padding kiri) */
+          .main-content { margin-left: 0 !important; padding: 16px 20px 16px 76px !important; transition: padding 0.3s; width: 100%; box-sizing: border-box; }
           .nav-item-icon { 
             display: flex; justify-content: center; align-items: center; width: 40px; height: 40px; 
             border-radius: 10px; margin: 8px 0; color: #cbd5e1; cursor: pointer; transition: all 0.2s; position: relative;
@@ -531,7 +537,7 @@ export default function App() {
 
         @media (max-width: 768px) {
           .sidebar-fixed { display: none !important; }
-          .main-content { margin-left: 0 !important; padding: 12px; }
+          .main-content { margin-left: 0 !important; padding: 12px; width: 100%; box-sizing: border-box; }
           .d-none-mobile { display: none !important; }
         }
 
@@ -561,13 +567,14 @@ export default function App() {
         .cal-day-compact.empty { background: transparent; pointer-events: none; }
         .cal-day-compact.selected { background: #0ea5e9 !important; color: #fff; font-weight: bold; }
 
-        /* Grid Baris 1: Kalender Kompak & KPI 3x2 */
+        /* Grid Baris 1: Kalender Kompak & KPI 3x2 (Fluid) */
         .row-1-grid {
           display: grid;
           grid-template-columns: 280px 1fr;
           gap: 16px;
           margin-bottom: 20px;
           align-items: stretch;
+          width: 100%;
         }
         .kpi-grid-3x2 {
           display: grid;
@@ -576,18 +583,26 @@ export default function App() {
           gap: 12px;
         }
 
-        /* Top 10 Grid: Desktop 3 kolom, Mobile stack 1 baris ke bawah */
+        /* Baris 2 & 3: Widescreen fluid layout */
+        .charts-grid-overview {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 16px;
+          margin-bottom: 20px;
+        }
         .top10-grid-overview {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
           gap: 16px;
           margin-bottom: 20px;
         }
-        @media (max-width: 768px) {
-          .top10-grid-overview {
-            grid-template-columns: 1fr !important;
-          }
+
+        @media (max-width: 1024px) {
           .row-1-grid { grid-template-columns: 1fr; }
+          .charts-grid-overview { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+          .top10-grid-overview { grid-template-columns: 1fr !important; }
           .kpi-grid-3x2 { grid-template-columns: repeat(2, 1fr); }
         }
 
@@ -714,8 +729,8 @@ export default function App() {
 
           {activeMenu === 'overview' && (
             <>
-              {/* BARIS 2: DIAGRAM PIE & BALOK */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+              {/* BARIS 2: DIAGRAM PIE & BALOK (Fluid Widescreen) */}
+              <div className="charts-grid-overview">
                 <div className="card-panel" style={{ padding: '20px' }}>
                   <div className="panel-header" style={{ marginBottom: '12px' }}><h3>🍰 Distribusi Workload Rute</h3></div>
                   {dashboardData.chartData.labels.length > 0 ? (
@@ -735,7 +750,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* BARIS 3: KETIGA TOP 10 OVERVIEW (Desktop: 3 Kolom | Mobile: Stack 1 Kolom ke Bawah) */}
+              {/* BARIS 3: KETIGA TOP 10 OVERVIEW (Fluid Widescreen) */}
               <div className="top10-grid-overview">
                 
                 <div className="card-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column' }}>
