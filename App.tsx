@@ -498,14 +498,14 @@ export default function App() {
         .kpi-card { background: rgba(17, 24, 39, 0.6) !important; backdrop-filter: blur(12px) !important; border: 1px solid rgba(255,255,255,0.04); }
         .selected-week { background: rgba(14, 165, 233, 0.3) !important; color: #fff !important; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.5); }
         
-        /* Sidebar Kompak di Kiri tanpa Gap Berlebih */
+        /* Layout PC: Sidebar rapat ke kiri, konten langsung pepet dengan sidebar */
         @media (min-width: 769px) {
           .sidebar-fixed {
             width: 64px; position: fixed; left: 0; top: 0; bottom: 0; z-index: 50;
             background: rgba(15, 23, 42, 0.95) !important; border-right: 1px solid rgba(255,255,255,0.05);
             display: flex; flex-direction: column; align-items: center; padding-top: 20px;
           }
-          .main-content { margin-left: 64px; transition: margin-left 0.3s; padding: 20px 24px; }
+          .main-content { margin-left: 64px; transition: margin-left 0.3s; padding: 16px 16px 16px 12px; }
           .nav-item-icon { 
             display: flex; justify-content: center; align-items: center; width: 40px; height: 40px; 
             border-radius: 10px; margin: 8px 0; color: #cbd5e1; cursor: pointer; transition: all 0.2s; position: relative;
@@ -529,7 +529,7 @@ export default function App() {
 
         @media (max-width: 768px) {
           .sidebar-fixed { display: none !important; }
-          .main-content { margin-left: 0 !important; padding: 16px; }
+          .main-content { margin-left: 0 !important; padding: 12px; }
           .d-none-mobile { display: none !important; }
         }
 
@@ -574,10 +574,18 @@ export default function App() {
           gap: 12px;
         }
 
-        @media (max-width: 1024px) {
-          .row-1-grid { grid-template-columns: 1fr; }
+        /* Top 10 Grid: Desktop 3 kolom, Mobile stack 1 baris ke bawah */
+        .top10-grid-overview {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 16px;
+          margin-bottom: 20px;
         }
         @media (max-width: 768px) {
+          .top10-grid-overview {
+            grid-template-columns: 1fr !important;
+          }
+          .row-1-grid { grid-template-columns: 1fr; }
           .kpi-grid-3x2 { grid-template-columns: repeat(2, 1fr); }
         }
 
@@ -725,8 +733,8 @@ export default function App() {
                 </div>
               </div>
 
-              {/* BARIS 3: KETIGA TOP 10 OVERVIEW */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }} className="responsive-grid-3">
+              {/* BARIS 3: KETIGA TOP 10 OVERVIEW (Desktop: 3 Kolom | Mobile: Stack 1 Kolom ke Bawah) */}
+              <div className="top10-grid-overview">
                 
                 <div className="card-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px' }}>
