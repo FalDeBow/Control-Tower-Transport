@@ -391,13 +391,19 @@ export default function App() {
 
   }, [rawGasData, mode, selectedDate]);
 
-  const filteredRoutes = dashboardData?.routeRows?.filter((r: any) => r.code.toLowerCase().includes(searchQuery.toLowerCase())) || [];
-  const filteredPoints = dashboardData?.pointRows?.filter((p: any) => p.name.toLowerCase().includes(searchQuery.toLowerCase())) || [];
-  const filteredCrews = dashboardData?.crewRows?.filter((c: any) => 
+  // SAFE DESTRUCTURING (Mencegah Crash saat awal loading)
+  const safeRoutes = dashboardData?.routeRows || [];
+  const safePoints = dashboardData?.pointRows || [];
+  const safeCrews = dashboardData?.crewRows || [];
+  const safePickups = dashboardData?.topPickupPoints || [];
+
+  const filteredRoutes = safeRoutes.filter((r: any) => r.code.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredPoints = safePoints.filter((p: any) => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredCrews = safeCrews.filter((c: any) => 
       c.driver.toLowerCase().includes(crewSearchQuery.toLowerCase()) || 
       c.helper.toLowerCase().includes(crewSearchQuery.toLowerCase())
-  ) || [];
-  const validRouteCodes = dashboardData?.routeRows?.map((r: any) => r.code) || [];
+  );
+  const validRouteCodes = safeRoutes.map((r: any) => r.code);
   const filteredRouteCodes = validRouteCodes.filter((code: string) => code.toLowerCase().includes(pinSearchQuery.toLowerCase()));
 
   const getBadgeClass = (s: string) => !s ? 'badge-optimal' : s.includes('WARNING') ? 'badge-warning' : s.includes('CRITICAL') ? 'badge-critical' : 'badge-optimal';
@@ -438,9 +444,8 @@ export default function App() {
   };
 
   const renderCalendarUtuh = () => {
-    // Render Kalender Agustus 2026 utuh (7x5)
     const daysArr = [];
-    const emptyStart = 6; // 1 Agustus 2026 adalah hari Sabtu (index 6, jika 0=Minggu)
+    const emptyStart = 6; 
     
     for(let e = 0; e < emptyStart; e++) {
       daysArr.push(<div key={`emp-${e}`} className="cal-day empty"></div>);
@@ -461,7 +466,7 @@ export default function App() {
 
   const handleMenuClick = (menu: string) => {
     setActiveMenu(menu);
-    setIsSlideMenuOpen(false); // Tutup slide menu saat diklik
+    setIsSlideMenuOpen(false);
   };
 
   const renderMapsUrl = () => {
@@ -489,6 +494,14 @@ export default function App() {
         .kpi-card { background: rgba(17, 24, 39, 0.6) !important; backdrop-filter: blur(12px) !important; border: 1px solid rgba(255,255,255,0.04); }
         .selected-week { background: rgba(14, 165, 233, 0.3) !important; color: #fff !important; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.5); }
         
+        /* HELPER UNTUK MOBILE / PC */
+        @media (max-width: 768px) {
+          .d-none-mobile { display: none !important; }
+        }
+        @media (min-width: 769px) {
+          .d-show-mobile { display: none !important; }
+        }
+
         /* SIDEBAR TETAP (ICONS ONLY + TOOLTIP HANYA SAAT HOVER) */
         @media (min-width: 769px) {
           .sidebar-fixed {
@@ -518,7 +531,7 @@ export default function App() {
           .hamburger-btn-desktop:hover { background: rgba(255,255,255,0.1); }
         }
 
-        /* SLIDE MENU OFF-CANVAS (Dinamis / Menu Geser) */
+        /* SLIDE MENU OFF-CANVAS (Dinamis Menu Geser) */
         .slide-menu-overlay {
           position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1001; 
           opacity: 0; visibility: hidden; transition: all 0.3s;
@@ -563,6 +576,10 @@ export default function App() {
         .lb-rank { margin-right: 10px; font-size: 13px; }
         .lb-name { flex: 1; font-size: 11px; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .lb-val { font-size: 11px; font-weight: bold; color: #38bdf8; margin-left: 8px; }
+
+        @media (max-width: 1024px) {
+           .responsive-grid-3 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important; }
+        }
       `}</style>
 
       <div className="ambient-bg"></div>
@@ -675,7 +692,7 @@ export default function App() {
           {activeMenu === 'overview' && (
             <>
               {/* SPOTLIGHT TOP 10 DINAMIS (Kompak Tanpa Page Scroll) */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }} className="responsive-grid-3">
+              <div style={{ display: 'grid', gap: '16px', marginBottom: '20px' }} className="responsive-grid-3">
                 
                 {/* 1. TOP 10 RUTE */}
                 <div className="card-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column' }}>
@@ -684,7 +701,7 @@ export default function App() {
                     <h3 style={{ color: '#f8fafc', fontSize: '13px', margin: 0 }}>Top 10 Rute</h3>
                   </div>
                   <div style={{ height: '240px', overflowY: 'auto' }} className="custom-scroll">
-                    {dashboardData?.routeRows?.slice(0, 10).map((r: any, idx: number) => (
+                    {safeRoutes.slice(0, 10).map((r: any, idx: number) => (
                       <div className="lb-row" key={idx}>
                         <div style={{ display: 'flex', alignItems: 'center' }}>
                           <span className="lb-rank">{getRankMedal(idx)}</span>
@@ -693,7 +710,7 @@ export default function App() {
                         <span className="lb-val">{r.load} Pkt</span>
                       </div>
                     ))}
-                    {(!dashboardData?.routeRows || dashboardData.routeRows.length === 0) && <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Belum ada data rute.</p>}
+                    {safeRoutes.length === 0 && <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Belum ada data rute.</p>}
                   </div>
                 </div>
 
@@ -704,7 +721,7 @@ export default function App() {
                     <h3 style={{ color: '#f8fafc', fontSize: '13px', margin: 0 }}>Top 10 Pick-Up Point</h3>
                   </div>
                   <div style={{ height: '240px', overflowY: 'auto' }} className="custom-scroll">
-                    {dashboardData?.topPickupPoints?.map((p: any, idx: number) => (
+                    {safePickups.map((p: any, idx: number) => (
                       <div className="lb-row" key={idx}>
                         <div style={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
                           <span className="lb-rank">{getRankMedal(idx)}</span>
@@ -713,7 +730,7 @@ export default function App() {
                         <span className="lb-val" style={{ color: '#10b981' }}>{p.load} Pkt</span>
                       </div>
                     ))}
-                    {(!dashboardData?.topPickupPoints || dashboardData.topPickupPoints.length === 0) && <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Belum ada data pick-up.</p>}
+                    {safePickups.length === 0 && <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Belum ada data pick-up.</p>}
                   </div>
                 </div>
 
@@ -724,7 +741,7 @@ export default function App() {
                     <h3 style={{ color: '#f8fafc', fontSize: '13px', margin: 0 }}>Top 10 Crew</h3>
                   </div>
                   <div style={{ height: '240px', overflowY: 'auto' }} className="custom-scroll">
-                    {dashboardData?.crewRows?.slice(0, 10).map((c: any, idx: number) => (
+                    {safeCrews.slice(0, 10).map((c: any, idx: number) => (
                       <div className="lb-row" key={idx}>
                         <div style={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
                           <span className="lb-rank">{getRankMedal(idx)}</span>
@@ -736,7 +753,7 @@ export default function App() {
                         <span className="lb-val" style={{ color: '#fbbf24' }}>{c.totalLoad} Pkt</span>
                       </div>
                     ))}
-                    {(!dashboardData?.crewRows || dashboardData.crewRows.length === 0) && <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Belum ada data kru.</p>}
+                    {safeCrews.length === 0 && <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Belum ada data kru.</p>}
                   </div>
                 </div>
 
@@ -938,7 +955,7 @@ export default function App() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '420px', overflowY: 'auto', paddingRight: '6px' }}>
                   {filteredRouteCodes.map((code: string) => {
                     const isSelected = selectedRouteCode === code;
-                    const routeItem = dashboardData?.routeRows?.find((r: any) => r.code === code);
+                    const routeItem = safeRoutes.find((r: any) => r.code === code);
                     return (
                       <div key={code} onClick={() => setSelectedRouteCode(code)} style={{ padding: '14px', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.2s', border: isSelected ? '1px solid var(--app-accent)' : '1px solid rgba(255,255,255,0.05)', background: isSelected ? 'rgba(56, 189, 248, 0.12)' : 'rgba(0,0,0,0.2)' }}>
                         <div style={{ color: isSelected ? 'var(--app-accent)' : '#e2e8f0', fontWeight: 'bold', fontSize: '12px', fontFamily: 'monospace', marginBottom: '4px' }}>🚚 {code}</div>
