@@ -187,7 +187,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [pinSearchQuery, setPinSearchQuery] = useState('');
   const [crewSearchQuery, setCrewSearchQuery] = useState('');
-  const [geoStatusFilter, setGeoStatusFilter] = useState('all'); // Advance GPS filter
+  const [geoStatusFilter, setGeoStatusFilter] = useState('all');
   
   const [mode, setMode] = useState('monthly'); 
   const [selectedDate, setSelectedDate] = useState('2026-08-27');
@@ -411,7 +411,6 @@ export default function App() {
       c.helper.toLowerCase().includes(crewSearchQuery.toLowerCase())
   );
   
-  // Advance GPS Route filtering with status
   const validRouteCodes = dashboardData.routeRows.filter((r: any) => {
     const matchSearch = r.code.toLowerCase().includes(pinSearchQuery.toLowerCase());
     if (geoStatusFilter === 'all') return matchSearch;
@@ -483,8 +482,8 @@ export default function App() {
 
   const renderMapsUrl = () => {
     if (!selectedRouteCode) return '';
-    const searchQueryMaps = encodeURIComponent(`${selectedRouteCode} Area Jakarta Indonesia`);
-    return `https://maps.google.com/maps?q=${searchQueryMaps}&z=13&output=embed`;
+    const searchQueryMaps = encodeURIComponent(`${selectedRouteCode} Jakarta Indonesia`);
+    return `https://maps.google.com/maps?q=${searchQueryMaps}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
   };
 
   const getRankMedal = (idx: number) => {
@@ -499,7 +498,6 @@ export default function App() {
   return (
     <>
       <style>{`
-        /* Global Full Width Reset */
         html, body, #root {
           width: 100% !important;
           max-width: 100% !important;
@@ -650,7 +648,7 @@ export default function App() {
         </div>
       )}
 
-      {/* SLIDE MENU DINAMIS (Urutan Baru) */}
+      {/* SLIDE MENU DINAMIS */}
       <div className={`slide-menu-overlay ${isSlideMenuOpen ? 'open' : ''}`} onClick={() => setIsSlideMenuOpen(false)}></div>
       <div className={`slide-menu ${isSlideMenuOpen ? 'open' : ''}`}>
         <h2 style={{ padding: '0 24px 20px', color: '#f8fafc', fontSize: '16px', letterSpacing: '1px', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '10px' }}>
@@ -664,7 +662,7 @@ export default function App() {
         <div className={`nav-item ${activeMenu === 'geotag' ? 'active' : ''}`} onClick={() => handleMenuClick('geotag')}><Icons.GPS /> <span>GPS Live Maps</span></div>
       </div>
 
-      {/* SIDEBAR FIXED PC (Urutan Baru) */}
+      {/* SIDEBAR FIXED PC */}
       <div className="sidebar-fixed">
         <button className="hamburger-btn-desktop" onClick={() => setIsSlideMenuOpen(true)}>
           <Icons.Menu />
@@ -1005,7 +1003,6 @@ export default function App() {
                   <span style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Pemantauan rute real-time & advance status filter</span>
                 </div>
                 
-                {/* ADVANCE FEATURE: STATUS FILTER BUTTONS */}
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                   <button className={`mode-btn ${geoStatusFilter === 'all' ? 'active' : ''}`} onClick={() => setGeoStatusFilter('all')} style={{ padding: '6px 10px', fontSize: '10px' }}>Semua</button>
                   <button className={`mode-btn ${geoStatusFilter === 'optimal' ? 'active' : ''}`} onClick={() => setGeoStatusFilter('optimal')} style={{ padding: '6px 10px', fontSize: '10px' }}>Optimal</button>
@@ -1039,17 +1036,39 @@ export default function App() {
                   </div>
                 </div>
 
-                <div style={{ border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', overflow: 'hidden', height: '420px', background: 'rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column' }}>
-                  {/* ADVANCE FEATURE: LIVE CREW METADATA PANEL */}
-                  <div style={{ padding: '10px 16px', background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', overflow: 'hidden', height: '420px', background: '#0b1329', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                  <div style={{ padding: '10px 16px', background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', zIndex: 10 }}>
                     <span style={{ color: 'var(--app-accent)', fontSize: '11px', fontWeight: 'bold', fontFamily: 'monospace' }}>🎯 Rute: {selectedRouteCode || 'Pilih Rute'}</span>
-                    <span style={{ fontSize: '10px', color: '#cbd5e1' }}>Kru: <strong style={{ color: '#fbbf24' }}>{selectedRouteDetails?.assignedCrew || 'Unassigned'}</strong></span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '10px', color: '#cbd5e1' }}>Kru: <strong style={{ color: '#fbbf24' }}>{selectedRouteDetails?.assignedCrew || 'Unassigned'}</strong></span>
+                      {selectedRouteCode && (
+                        <a 
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${selectedRouteCode} Jakarta Indonesia`)}`} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          style={{ fontSize: '10px', background: '#0ea5e9', color: '#fff', padding: '3px 8px', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold' }}
+                        >
+                          Buka Maps ↗
+                        </a>
+                      )}
+                    </div>
                   </div>
 
-                  <div style={{ flex: 1, width: '100%', position: 'relative' }}>
+                  <div style={{ flex: 1, width: '100%', position: 'relative', background: '#0b1329' }}>
                     {selectedRouteCode ? (
-                      <iframe width="100%" height="100%" style={{ border: 0, position: 'absolute', top: 0, left: 0 }} allowFullScreen loading="lazy" src={renderMapsUrl()}></iframe>
-                    ) : (<div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: '12px' }}>Pilih rute untuk melihat Maps</div>)}
+                      <iframe 
+                        width="100%" 
+                        height="100%" 
+                        style={{ border: 0, position: 'absolute', top: 0, left: 0, background: '#0b1329' }} 
+                        allowFullScreen 
+                        loading="lazy" 
+                        src={renderMapsUrl()}
+                      ></iframe>
+                    ) : (
+                      <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: '12px' }}>
+                        Pilih rute untuk melihat Maps
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
