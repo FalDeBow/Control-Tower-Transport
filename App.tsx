@@ -172,7 +172,6 @@ export default function App() {
   const [activeMenu, setActiveMenu] = useState('overview');
   const [rawGasData, setRawGasData] = useState<any[]>([]);
   
-  // Inisialisasi safe state agar tidak pernah null
   const [dashboardData, setDashboardData] = useState<any>({
     kpi: { tripCount: 0, totalPurePU: 0, totalPureDrop: 0, totalWorkloadEffort: 0, overallSlaPct: 0, overallLoadPct: 0 },
     routeRows: [],
@@ -499,39 +498,8 @@ export default function App() {
         .kpi-card { background: rgba(17, 24, 39, 0.6) !important; backdrop-filter: blur(12px) !important; border: 1px solid rgba(255,255,255,0.04); }
         .selected-week { background: rgba(14, 165, 233, 0.3) !important; color: #fff !important; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.5); }
         
-        @media (max-width: 768px) {
-          .d-none-mobile { display: none !important; }
-        }
-        @media (min-width: 769px) {
-          .d-show-mobile { display: none !important; }
-        }
-
-        @media (min-width: 769px) {
-          .sidebar-fixed {
-            width: 64px; position: fixed; left: 0; top: 0; bottom: 0; z-index: 50;
-            background: rgba(15, 23, 42, 0.95) !important; border-right: 1px solid rgba(255,255,255,0.05);
-            display: flex; flex-direction: column; align-items: center; padding-top: 20px;
-          }
-          .main-content { margin-left: 64px; transition: margin-left 0.3s; padding: 20px; }
-          .nav-item-icon { 
-            display: flex; justify-content: center; align-items: center; width: 40px; height: 40px; 
-            border-radius: 10px; margin: 8px 0; color: #cbd5e1; cursor: pointer; transition: all 0.2s; position: relative;
-          }
-          .nav-item-icon:hover { background: rgba(255,255,255,0.1); color: #f8fafc; }
-          .nav-item-icon.active { background: rgba(14, 165, 233, 0.15); color: #38bdf8; }
-          
-          .nav-item-icon::after {
-            content: attr(data-tooltip); position: absolute; left: 100%; top: 50%; transform: translateY(-50%);
-            margin-left: 10px; background: rgba(15, 23, 42, 0.95); padding: 6px 12px; border-radius: 6px;
-            color: #f8fafc; font-size: 11px; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 0.2s, margin-left 0.2s;
-            border: 1px solid rgba(255,255,255,0.1); z-index: 100;
-          }
-          .nav-item-icon:hover::after { opacity: 1; margin-left: 16px; }
-          .hamburger-btn-desktop { 
-            background: none; border: none; color: #cbd5e1; cursor: pointer; padding: 10px; border-radius: 8px; margin-bottom: 20px;
-          }
-          .hamburger-btn-desktop:hover { background: rgba(255,255,255,0.1); }
-        }
+        /* Layout Utama Tanpa Gap Kiri (Full Width dengan Menu Geser Burger) */
+        .main-layout-content { margin-left: 0 !important; padding: 24px; transition: all 0.3s; }
 
         .slide-menu-overlay {
           position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1001; 
@@ -550,19 +518,31 @@ export default function App() {
         .slide-menu .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
         .slide-menu .nav-item.active { background: rgba(14, 165, 233, 0.15); color: #38bdf8; border-right: 3px solid #38bdf8; }
 
+        /* Top Filter Control Panel */
         .top-filter-bar {
-           display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; 
+           display: flex; flex-direction: column; gap: 16px;
            background: rgba(17, 24, 39, 0.5); border: 1px solid rgba(255,255,255,0.06); 
-           backdrop-filter: blur(10px); padding: 16px 24px; border-radius: 14px; margin-bottom: 20px; gap: 24px;
+           backdrop-filter: blur(10px); padding: 16px 24px; border-radius: 14px; margin-bottom: 20px;
         }
 
-        .calendar-grid-wrapper { flex: 1; min-width: 250px; max-width: 320px; }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; margin-top: 8px; }
+        /* Kalender Utuh Grid */
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; margin-top: 4px; max-width: 320px; }
         .cal-head { font-size: 10px; color: #94a3b8; font-weight: bold; padding-bottom: 4px; }
         .cal-day { font-size: 11px; padding: 6px 0; border-radius: 6px; cursor: pointer; color: #e2e8f0; background: rgba(0,0,0,0.2); transition: all 0.2s; }
         .cal-day:hover { background: rgba(255,255,255,0.1); }
         .cal-day.empty { background: transparent; pointer-events: none; }
         .cal-day.selected { background: #0ea5e9 !important; color: #fff; font-weight: bold; }
+
+        /* KPI Grid 3x2 */
+        .kpi-grid-3x2 {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 16px;
+          margin-bottom: 20px;
+        }
+        @media (max-width: 768px) {
+          .kpi-grid-3x2 { grid-template-columns: repeat(2, 1fr); }
+        }
 
         .custom-scroll::-webkit-scrollbar { width: 4px; }
         .custom-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 4px; }
@@ -589,6 +569,7 @@ export default function App() {
         </div>
       )}
 
+      {/* SLIDE MENU (Dinamis Menu Geser) */}
       <div className={`slide-menu-overlay ${isSlideMenuOpen ? 'open' : ''}`} onClick={() => setIsSlideMenuOpen(false)}></div>
       <div className={`slide-menu ${isSlideMenuOpen ? 'open' : ''}`}>
         <h2 style={{ padding: '0 24px 20px', color: '#f8fafc', fontSize: '16px', letterSpacing: '1px', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '10px' }}>
@@ -602,23 +583,13 @@ export default function App() {
         <div className={`nav-item ${activeMenu === 'geotag' ? 'active' : ''}`} onClick={() => handleMenuClick('geotag')}><Icons.GPS /> <span>GPS Live Maps</span></div>
       </div>
 
-      <div className="sidebar-fixed d-none-mobile">
-        <button className="hamburger-btn-desktop" onClick={() => setIsSlideMenuOpen(true)}>
-          <Icons.Menu />
-        </button>
-        <div className={`nav-item-icon ${activeMenu === 'overview' ? 'active' : ''}`} data-tooltip="Overview" onClick={() => handleMenuClick('overview')}><Icons.Overview /></div>
-        <div className={`nav-item-icon ${activeMenu === 'units' ? 'active' : ''}`} data-tooltip="Fleet Capacity" onClick={() => handleMenuClick('units')}><Icons.Fleet /></div>
-        <div className={`nav-item-icon ${activeMenu === 'routes' ? 'active' : ''}`} data-tooltip="Routes Performance" onClick={() => handleMenuClick('routes')}><Icons.Routes /></div>
-        <div className={`nav-item-icon ${activeMenu === 'crew' ? 'active' : ''}`} data-tooltip="Crew Matrix" onClick={() => handleMenuClick('crew')}><Icons.Crew /></div>
-        <div className={`nav-item-icon ${activeMenu === 'points' ? 'active' : ''}`} data-tooltip="Point Hub" onClick={() => handleMenuClick('points')}><Icons.Points /></div>
-        <div className={`nav-item-icon ${activeMenu === 'geotag' ? 'active' : ''}`} data-tooltip="GPS Live Maps" onClick={() => handleMenuClick('geotag')}><Icons.GPS /></div>
-      </div>
-
-      <div className="main-content">
+      <div className="main-layout-content">
         
-        <div className="top-bar">
+        <div className="top-bar" style={{ marginLeft: 0 }}>
           <div className="brand-container">
-            <button className="mobile-menu-btn d-show-mobile" onClick={() => setIsSlideMenuOpen(true)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '20px', marginRight: '10px' }}>☰</button>
+            <button className="mobile-menu-btn" onClick={() => setIsSlideMenuOpen(true)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '20px', marginRight: '10px', cursor: 'pointer' }}>
+              <Icons.Menu />
+            </button>
             <div className="pulse-dot"></div>
             <div className="brand-text">
               <h1>TRANSPORT <span>GLASS</span></h1>
@@ -648,21 +619,23 @@ export default function App() {
 
         <div className="dashboard-container">
           
+          {/* TOP CONTROL PANEL: PERIODE & FILTER DI ATAS KALENDER */}
           <div className="top-filter-bar">
-             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--app-muted)' }}>PERIODE DATA & FILTER</span>
-                <div style={{ display: 'flex', gap: '8px' }}>
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--app-muted)', letterSpacing: '0.5px' }}>PERIODE DATA & FILTER</span>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   <button className={`mode-btn ${mode === 'monthly' ? 'active' : ''}`} onClick={() => setMode('monthly')}>Bulan Ini</button>
                   <button className={`mode-btn ${mode === 'weekly' ? 'active' : ''}`} onClick={() => setMode('weekly')}>Mingguan</button>
                   <button className={`mode-btn ${mode === 'daily' ? 'active' : ''}`} onClick={() => setMode('daily')}>Harian</button>
                 </div>
-                <div style={{ fontSize: '10px', color: '#64748b', marginTop: '4px' }}>
+                <div style={{ fontSize: '10px', color: '#64748b' }}>
                   Status: Menampilkan data {mode === 'monthly' ? 'keseluruhan' : mode === 'weekly' ? 'minggu terpilih' : 'hari terpilih'}
                 </div>
              </div>
              
-             <div className="calendar-grid-wrapper">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+             {/* Kalender Utuh Grid di Bawah Filter */}
+             <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '12px', maxWidth: '320px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                   <span style={{ fontSize: '11px', color: '#e2e8f0', fontWeight: 'bold' }}>🗓️ Agustus 2026</span>
                   <span style={{ fontSize: '9px', cursor: 'pointer', background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px', color: '#94a3b8' }} onClick={() => setMode('monthly')}>Reset</span>
                 </div>
@@ -674,17 +647,19 @@ export default function App() {
              </div>
           </div>
 
-          <div className="kpi-grid">
+          {/* 6 KARTU NILAI (GRID 3x2) */}
+          <div className="kpi-grid-3x2">
             <div className="kpi-card"><div className="title">Total Trip</div><div className="value">{dashboardData.kpi.tripCount}</div><div className="subtext">Unit Aktif</div></div>
-            <div className="kpi-card"><div className="title">Pure Pick-Up</div><div className="value" style={{ color: '#0ea5e9' }}>{dashboardData.kpi.totalPurePU}</div><div className="subtext">Pengambilan (Pkt)</div></div>
-            <div className="kpi-card"><div className="title">Pure Drop SS</div><div className="value" style={{ color: '#10b981' }}>{dashboardData.kpi.totalPureDrop}</div><div className="subtext">Penurunan (Pkt)</div></div>
+            <div className="kpi-card"><div className="title">Parcel PU</div><div className="value" style={{ color: '#0ea5e9' }}>{dashboardData.kpi.totalPurePU}</div><div className="subtext">Pengambilan (Pkt)</div></div>
+            <div className="kpi-card"><div className="title">Parcel Drop</div><div className="value" style={{ color: '#10b981' }}>{dashboardData.kpi.totalPureDrop}</div><div className="subtext">Penurunan (Pkt)</div></div>
             <div className="kpi-card"><div className="title">Total Workload</div><div className="value">{dashboardData.kpi.totalWorkloadEffort}</div><div className="subtext">Points Visit</div></div>
             <div className="kpi-card"><div className="title">SLA On-Time</div><div className="value">{dashboardData.kpi.overallSlaPct}%</div><div className="subtext">Aman (No Delay)</div></div>
-            <div className="kpi-card"><div className="title">Real Load Factor</div><div className="value">{dashboardData.kpi.overallLoadPct}%</div><div className="subtext">Eq-PU Volume</div></div>
+            <div className="kpi-card"><div className="title">Load Factor %</div><div className="value">{dashboardData.kpi.overallLoadPct}%</div><div className="subtext">Eq-PU Volume</div></div>
           </div>
 
           {activeMenu === 'overview' && (
             <>
+              {/* SPOTLIGHT TOP 10 DINAMIS (3 Kolom Sejajar) */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }} className="responsive-grid-3">
                 
                 <div className="card-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column' }}>
