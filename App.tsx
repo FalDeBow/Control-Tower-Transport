@@ -48,10 +48,10 @@ const isDateInSameWeek = (targetDateStr: string, selectedDateStr: string) => {
 const Icons = {
   Menu: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'22px', height:'22px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>,
   Overview: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'20px', height:'20px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>,
-  Fleet: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'20px', height:'20px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" /></svg>,
   Routes: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'20px', height:'20px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" /></svg>,
-  Crew: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'20px', height:'20px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>,
   Points: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'20px', height:'20px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>,
+  Crew: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'20px', height:'20px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>,
+  Fleet: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'20px', height:'20px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" /></svg>,
   GPS: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'20px', height:'20px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zm-7.518-.267A8.25 8.25 0 1120.25 10.5M8.288 14.212A5.25 5.25 0 1117.25 10.5" /></svg>,
   Search: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'18px', height:'18px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>,
 };
@@ -187,6 +187,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [pinSearchQuery, setPinSearchQuery] = useState('');
   const [crewSearchQuery, setCrewSearchQuery] = useState('');
+  const [geoStatusFilter, setGeoStatusFilter] = useState('all'); // Advance GPS filter
   
   const [mode, setMode] = useState('monthly'); 
   const [selectedDate, setSelectedDate] = useState('2026-08-27');
@@ -296,8 +297,9 @@ export default function App() {
           delayCount++;
       }
 
-      if (!routeMap[rute]) routeMap[rute] = { points: 0, pu: 0, drop: 0, onTime: 0, totalDelay: 0, delayCount: 0 };
+      if (!routeMap[rute]) routeMap[rute] = { points: 0, pu: 0, drop: 0, onTime: 0, totalDelay: 0, delayCount: 0, drivers: new Set() };
       routeMap[rute].points++;
+      routeMap[rute].drivers.add(`${driver} & ${helper}`);
       if (isPickUp) routeMap[rute].pu += paket;
       if (isDrop) routeMap[rute].drop += paket;
       if (delay <= 0) routeMap[rute].onTime++;
@@ -340,7 +342,8 @@ export default function App() {
 
        return {
           code: rute, points: r.points, puDrop: `${r.pu} / ${r.drop}`, sla: `${sla}%`,
-          avgDelay: avgDelay > 0 ? `+${avgDelay}m` : '0m', load: load, status: status
+          avgDelay: avgDelay > 0 ? `+${avgDelay}m` : '0m', load: load, status: status,
+          assignedCrew: Array.from(r.drivers).join(', ')
        };
     }).sort((a,b) => b.load - a.load);
 
@@ -407,8 +410,13 @@ export default function App() {
       c.driver.toLowerCase().includes(crewSearchQuery.toLowerCase()) || 
       c.helper.toLowerCase().includes(crewSearchQuery.toLowerCase())
   );
-  const validRouteCodes = dashboardData.routeRows.map((r: any) => r.code);
-  const filteredRouteCodes = validRouteCodes.filter((code: string) => code.toLowerCase().includes(pinSearchQuery.toLowerCase()));
+  
+  // Advance GPS Route filtering with status
+  const validRouteCodes = dashboardData.routeRows.filter((r: any) => {
+    const matchSearch = r.code.toLowerCase().includes(pinSearchQuery.toLowerCase());
+    if (geoStatusFilter === 'all') return matchSearch;
+    return matchSearch && r.status.toLowerCase() === geoStatusFilter.toLowerCase();
+  }).map((r: any) => r.code);
 
   const getBadgeClass = (s: string) => !s ? 'badge-optimal' : s.includes('WARNING') ? 'badge-warning' : s.includes('CRITICAL') ? 'badge-critical' : 'badge-optimal';
 
@@ -486,10 +494,12 @@ export default function App() {
     return <span style={{ color: '#64748b', fontSize: '11px', display: 'inline-block', width: '16px', textAlign: 'center' }}>{idx + 1}</span>;
   };
 
+  const selectedRouteDetails = dashboardData.routeRows.find((r: any) => r.code === selectedRouteCode);
+
   return (
     <>
       <style>{`
-        /* Global Full Width Reset untuk Memastikan Tidak Ada Batasan Kosong di Kanan */
+        /* Global Full Width Reset */
         html, body, #root {
           width: 100% !important;
           max-width: 100% !important;
@@ -508,14 +518,12 @@ export default function App() {
         .kpi-card { background: rgba(17, 24, 39, 0.6) !important; backdrop-filter: blur(12px) !important; border: 1px solid rgba(255,255,255,0.04); }
         .selected-week { background: rgba(14, 165, 233, 0.3) !important; color: #fff !important; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.5); }
         
-        /* Kontainer dashboard diperlebar 100% */
         .dashboard-container {
           width: 100% !important;
           max-width: 100% !important;
           box-sizing: border-box !important;
         }
 
-        /* Sidebar & Layout Utama Fluid */
         @media (min-width: 769px) {
           .sidebar-fixed {
             width: 64px; position: fixed; left: 0; top: 0; bottom: 0; z-index: 100;
@@ -523,7 +531,6 @@ export default function App() {
             border-right: 1px solid rgba(255,255,255,0.05);
             display: flex; flex-direction: column; align-items: center; padding-top: 20px;
           }
-          /* Memaksa konten mengisi penuh dari sisa ruang sidebar ke ujung kanan browser (padding kanan 20px) */
           .main-content {
             margin-left: 0 !important;
             width: 100% !important;
@@ -559,7 +566,6 @@ export default function App() {
           .d-none-mobile { display: none !important; }
         }
 
-        /* Slide Menu Overlay */
         .slide-menu-overlay {
           position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1001; 
           opacity: 0; visibility: hidden; transition: all 0.3s;
@@ -577,7 +583,6 @@ export default function App() {
         .slide-menu .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
         .slide-menu .nav-item.active { background: rgba(14, 165, 233, 0.15); color: #38bdf8; border-right: 3px solid #38bdf8; }
 
-        /* Kalender Kompak */
         .calendar-grid-compact { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; text-align: center; margin-top: 4px; }
         .cal-head { font-size: 9px; color: #94a3b8; font-weight: bold; padding-bottom: 2px; }
         .cal-day-compact { font-size: 10px; padding: 4px 0; border-radius: 4px; cursor: pointer; color: #e2e8f0; background: rgba(0,0,0,0.2); transition: all 0.2s; }
@@ -585,7 +590,6 @@ export default function App() {
         .cal-day-compact.empty { background: transparent; pointer-events: none; }
         .cal-day-compact.selected { background: #0ea5e9 !important; color: #fff; font-weight: bold; }
 
-        /* Grid Baris 1: Kalender Kompak & KPI 3x2 (Fluid) */
         .row-1-grid {
           display: grid;
           grid-template-columns: 280px 1fr;
@@ -601,7 +605,6 @@ export default function App() {
           gap: 12px;
         }
 
-        /* Baris 2 & 3: Widescreen fluid layout */
         .charts-grid-overview {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
@@ -647,30 +650,30 @@ export default function App() {
         </div>
       )}
 
-      {/* SLIDE MENU DINAMIS */}
+      {/* SLIDE MENU DINAMIS (Urutan Baru) */}
       <div className={`slide-menu-overlay ${isSlideMenuOpen ? 'open' : ''}`} onClick={() => setIsSlideMenuOpen(false)}></div>
       <div className={`slide-menu ${isSlideMenuOpen ? 'open' : ''}`}>
         <h2 style={{ padding: '0 24px 20px', color: '#f8fafc', fontSize: '16px', letterSpacing: '1px', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '10px' }}>
           TRANSPORT GLASS
         </h2>
         <div className={`nav-item ${activeMenu === 'overview' ? 'active' : ''}`} onClick={() => handleMenuClick('overview')}><Icons.Overview /> <span>Overview</span></div>
-        <div className={`nav-item ${activeMenu === 'units' ? 'active' : ''}`} onClick={() => handleMenuClick('units')}><Icons.Fleet /> <span>Fleet Capacity</span></div>
-        <div className={`nav-item ${activeMenu === 'routes' ? 'active' : ''}`} onClick={() => handleMenuClick('routes')}><Icons.Routes /> <span>Routes Performance</span></div>
+        <div className={`nav-item ${activeMenu === 'routes' ? 'active' : ''}`} onClick={() => handleMenuClick('routes')}><Icons.Routes /> <span>Route Performance</span></div>
+        <div className={`nav-item ${activeMenu === 'points' ? 'active' : ''}`} onClick={() => handleMenuClick('points')}><Icons.Points /> <span>Pickup Point</span></div>
         <div className={`nav-item ${activeMenu === 'crew' ? 'active' : ''}`} onClick={() => handleMenuClick('crew')}><Icons.Crew /> <span>Crew Matrix</span></div>
-        <div className={`nav-item ${activeMenu === 'points' ? 'active' : ''}`} onClick={() => handleMenuClick('points')}><Icons.Points /> <span>Point Hub</span></div>
+        <div className={`nav-item ${activeMenu === 'units' ? 'active' : ''}`} onClick={() => handleMenuClick('units')}><Icons.Fleet /> <span>Fleet Capacity</span></div>
         <div className={`nav-item ${activeMenu === 'geotag' ? 'active' : ''}`} onClick={() => handleMenuClick('geotag')}><Icons.GPS /> <span>GPS Live Maps</span></div>
       </div>
 
-      {/* SIDEBAR FIXED PC */}
+      {/* SIDEBAR FIXED PC (Urutan Baru) */}
       <div className="sidebar-fixed">
         <button className="hamburger-btn-desktop" onClick={() => setIsSlideMenuOpen(true)}>
           <Icons.Menu />
         </button>
         <div className={`nav-item-icon ${activeMenu === 'overview' ? 'active' : ''}`} data-tooltip="Overview" onClick={() => handleMenuClick('overview')}><Icons.Overview /></div>
-        <div className={`nav-item-icon ${activeMenu === 'units' ? 'active' : ''}`} data-tooltip="Fleet Capacity" onClick={() => handleMenuClick('units')}><Icons.Fleet /></div>
-        <div className={`nav-item-icon ${activeMenu === 'routes' ? 'active' : ''}`} data-tooltip="Routes Performance" onClick={() => handleMenuClick('routes')}><Icons.Routes /></div>
+        <div className={`nav-item-icon ${activeMenu === 'routes' ? 'active' : ''}`} data-tooltip="Route Performance" onClick={() => handleMenuClick('routes')}><Icons.Routes /></div>
+        <div className={`nav-item-icon ${activeMenu === 'points' ? 'active' : ''}`} data-tooltip="Pickup Point" onClick={() => handleMenuClick('points')}><Icons.Points /></div>
         <div className={`nav-item-icon ${activeMenu === 'crew' ? 'active' : ''}`} data-tooltip="Crew Matrix" onClick={() => handleMenuClick('crew')}><Icons.Crew /></div>
-        <div className={`nav-item-icon ${activeMenu === 'points' ? 'active' : ''}`} data-tooltip="Point Hub" onClick={() => handleMenuClick('points')}><Icons.Points /></div>
+        <div className={`nav-item-icon ${activeMenu === 'units' ? 'active' : ''}`} data-tooltip="Fleet Capacity" onClick={() => handleMenuClick('units')}><Icons.Fleet /></div>
         <div className={`nav-item-icon ${activeMenu === 'geotag' ? 'active' : ''}`} data-tooltip="GPS Live Maps" onClick={() => handleMenuClick('geotag')}><Icons.GPS /></div>
       </div>
 
@@ -837,35 +840,6 @@ export default function App() {
             </>
           )}
 
-          {activeMenu === 'units' && (
-            <div className="card-panel" style={{ padding: '24px' }}>
-              <div className="panel-header" style={{ marginBottom: '16px' }}>
-                <h3 style={{ color: '#38bdf8', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  Fleet Capacity Analysis
-                </h3>
-                <span style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Evaluasi utilitas beban, kapasitas muatan, dan sebaran rute per jenis armada</span>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginTop: '16px' }}>
-                {dashboardData.unitInsights.map((u: any, idx: number) => (
-                  <div key={idx} style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <span style={{ fontWeight: 'bold', color: '#f8fafc', fontSize: '14px' }}>🚐 {u.type}</span>
-                      <span className={`badge ${u.efficiency >= 80 ? 'badge-optimal' : 'badge-warning'}`}>{u.efficiency}% Efisiensi</span>
-                    </div>
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', color: '#94a3b8', marginBottom: '14px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Total Trip Tugas:</span> <strong style={{ color: '#fff' }}>{u.trips} Trip</strong></div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Akumulasi Muatan:</span> <strong style={{ color: '#38bdf8' }}>{u.totalLoad} Paket</strong></div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Rata-rata per Trip:</span> <strong style={{ color: '#fbbf24' }}>{u.avgPerTrip} Pkt/Trip</strong></div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Cakupan Rute:</span> <strong style={{ color: '#34d399' }}>{u.routesCount} Rute Unik</strong></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {activeMenu === 'routes' && (
             <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
               <div className="panel-header" style={{ padding: '20px 20px 0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -892,6 +866,35 @@ export default function App() {
                 </table>
                 <div className="mobile-accordion-list">
                   {filteredRoutes.map((r: any, i: number) => <RouteAccordion key={i} rute={r} badgeClass={getBadgeClass(r.status)} />)}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeMenu === 'points' && (
+            <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="panel-header" style={{ padding: '20px 20px 0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3>Pickup Point Hub</h3>
+                <span style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399' }}>Live Data</span>
+              </div>
+              <div style={{ overflowX: 'auto', padding: '0 20px 20px 20px' }}>
+                <table className="desktop-table-view" style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr><th>NAMA POINT / SS</th><th>VISIT</th><th>PU / DROP</th><th>MB & BP DETAIL</th><th>STATUS</th></tr>
+                  </thead>
+                  <tbody>
+                    {filteredPoints.map((p: any, i: number) => (
+                      <tr key={i}>
+                        <td style={{ color: '#38bdf8', fontWeight: 'bold', fontFamily: 'monospace' }}>{p.name}</td>
+                        <td>{p.visit}</td><td>{p.puDrop}</td><td style={{ color: '#fbbf24' }}>{p.mbBp}</td>
+                        <td><span className={`badge ${getBadgeClass(p.status)}`}>{p.status}</span></td>
+                      </tr>
+                    ))}
+                    {filteredPoints.length === 0 && (<tr><td colSpan={5} style={{ textAlign: 'center', padding: '16px', color: 'var(--app-muted)' }}>Data point tidak ditemukan</td></tr>)}
+                  </tbody>
+                </table>
+                <div className="mobile-accordion-list">
+                  {filteredPoints.map((p: any, i: number) => <PointAccordion key={i} point={p} badgeClass={getBadgeClass(p.status)} />)}
                 </div>
               </div>
             </div>
@@ -965,31 +968,31 @@ export default function App() {
             </div>
           )}
 
-          {activeMenu === 'points' && (
-            <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
-              <div className="panel-header" style={{ padding: '20px 20px 0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3>Point Hub (Pickup & Drop)</h3>
-                <span style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399' }}>Live Data</span>
+          {activeMenu === 'units' && (
+            <div className="card-panel" style={{ padding: '24px' }}>
+              <div className="panel-header" style={{ marginBottom: '16px' }}>
+                <h3 style={{ color: '#38bdf8', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  Fleet Capacity Analysis
+                </h3>
+                <span style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Evaluasi utilitas beban, kapasitas muatan, dan sebaran rute per jenis armada</span>
               </div>
-              <div style={{ overflowX: 'auto', padding: '0 20px 20px 20px' }}>
-                <table className="desktop-table-view" style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr><th>NAMA POINT / SS</th><th>VISIT</th><th>PU / DROP</th><th>MB & BP DETAIL</th><th>STATUS</th></tr>
-                  </thead>
-                  <tbody>
-                    {filteredPoints.map((p: any, i: number) => (
-                      <tr key={i}>
-                        <td style={{ color: '#38bdf8', fontWeight: 'bold', fontFamily: 'monospace' }}>{p.name}</td>
-                        <td>{p.visit}</td><td>{p.puDrop}</td><td style={{ color: '#fbbf24' }}>{p.mbBp}</td>
-                        <td><span className={`badge ${getBadgeClass(p.status)}`}>{p.status}</span></td>
-                      </tr>
-                    ))}
-                    {filteredPoints.length === 0 && (<tr><td colSpan={5} style={{ textAlign: 'center', padding: '16px', color: 'var(--app-muted)' }}>Data point tidak ditemukan</td></tr>)}
-                  </tbody>
-                </table>
-                <div className="mobile-accordion-list">
-                  {filteredPoints.map((p: any, i: number) => <PointAccordion key={i} point={p} badgeClass={getBadgeClass(p.status)} />)}
-                </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginTop: '16px' }}>
+                {dashboardData.unitInsights.map((u: any, idx: number) => (
+                  <div key={idx} style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <span style={{ fontWeight: 'bold', color: '#f8fafc', fontSize: '14px' }}>🚐 {u.type}</span>
+                      <span className={`badge ${u.efficiency >= 80 ? 'badge-optimal' : 'badge-warning'}`}>{u.efficiency}% Efisiensi</span>
+                    </div>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', color: '#94a3b8', marginBottom: '14px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Total Trip Tugas:</span> <strong style={{ color: '#fff' }}>{u.trips} Trip</strong></div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Akumulasi Muatan:</span> <strong style={{ color: '#38bdf8' }}>{u.totalLoad} Paket</strong></div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Rata-rata per Trip:</span> <strong style={{ color: '#fbbf24' }}>{u.avgPerTrip} Pkt/Trip</strong></div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Cakupan Rute:</span> <strong style={{ color: '#34d399' }}>{u.routesCount} Rute Unik</strong></div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -997,32 +1000,52 @@ export default function App() {
           {activeMenu === 'geotag' && (
             <div className="card-panel">
               <div className="panel-header" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                <h3>GPS Live & History Maps</h3>
-                <input type="text" placeholder="Cari Kode Rute..." value={pinSearchQuery} onChange={(e) => setPinSearchQuery(e.target.value)} style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: '#fff', fontSize: '11px', outline: 'none', width: '100%', maxWidth: '240px', fontFamily: 'monospace' }} />
+                <div>
+                  <h3 style={{ color: '#38bdf8', fontSize: '16px' }}>GPS Live & History Maps</h3>
+                  <span style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Pemantauan rute real-time & advance status filter</span>
+                </div>
+                
+                {/* ADVANCE FEATURE: STATUS FILTER BUTTONS */}
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  <button className={`mode-btn ${geoStatusFilter === 'all' ? 'active' : ''}`} onClick={() => setGeoStatusFilter('all')} style={{ padding: '6px 10px', fontSize: '10px' }}>Semua</button>
+                  <button className={`mode-btn ${geoStatusFilter === 'optimal' ? 'active' : ''}`} onClick={() => setGeoStatusFilter('optimal')} style={{ padding: '6px 10px', fontSize: '10px' }}>Optimal</button>
+                  <button className={`mode-btn ${geoStatusFilter === 'warning' ? 'active' : ''}`} onClick={() => setGeoStatusFilter('warning')} style={{ padding: '6px 10px', fontSize: '10px' }}>Warning</button>
+                  <button className={`mode-btn ${geoStatusFilter === 'critical' ? 'active' : ''}`} onClick={() => setGeoStatusFilter('critical')} style={{ padding: '6px 10px', fontSize: '10px' }}>Critical</button>
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginTop: '16px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '420px', overflowY: 'auto', paddingRight: '6px' }}>
-                  {filteredRouteCodes.map((code: string) => {
-                    const isSelected = selectedRouteCode === code;
-                    const routeItem = dashboardData.routeRows.find((r: any) => r.code === code);
-                    return (
-                      <div key={code} onClick={() => setSelectedRouteCode(code)} style={{ padding: '14px', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.2s', border: isSelected ? '1px solid var(--app-accent)' : '1px solid rgba(255,255,255,0.05)', background: isSelected ? 'rgba(56, 189, 248, 0.12)' : 'rgba(0,0,0,0.2)' }}>
-                        <div style={{ color: isSelected ? 'var(--app-accent)' : '#e2e8f0', fontWeight: 'bold', fontSize: '12px', fontFamily: 'monospace', marginBottom: '4px' }}>🚚 {code}</div>
-                        <div style={{ fontSize: '10px', color: 'var(--app-muted)', display: 'flex', justifyContent: 'space-between' }}>
-                          <span>Total Stop Points: {routeItem?.points || '0'} Point</span>
-                          <span style={{ color: routeItem?.status?.includes('WARNING') ? '#fbbf24' : '#10b981', fontWeight: 'bold' }}>{routeItem?.status || 'Optimal'}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <input type="text" placeholder="Cari Kode Rute..." value={pinSearchQuery} onChange={(e) => setPinSearchQuery(e.target.value)} style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: '#fff', fontSize: '11px', outline: 'none', width: '100%', fontFamily: 'monospace', marginBottom: '4px' }} />
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '370px', overflowY: 'auto', paddingRight: '6px' }} className="custom-scroll">
+                    {filteredRouteCodes.map((code: string) => {
+                      const isSelected = selectedRouteCode === code;
+                      const routeItem = dashboardData.routeRows.find((r: any) => r.code === code);
+                      return (
+                        <div key={code} onClick={() => setSelectedRouteCode(code)} style={{ padding: '12px 14px', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.2s', border: isSelected ? '1px solid var(--app-accent)' : '1px solid rgba(255,255,255,0.05)', background: isSelected ? 'rgba(56, 189, 248, 0.12)' : 'rgba(0,0,0,0.2)' }}>
+                          <div style={{ color: isSelected ? 'var(--app-accent)' : '#e2e8f0', fontWeight: 'bold', fontSize: '12px', fontFamily: 'monospace', marginBottom: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span>🚚 {code}</span>
+                            <span className={`badge ${getBadgeClass(routeItem?.status)}`} style={{ fontSize: '9px', padding: '2px 6px' }}>{routeItem?.status || 'OPTIMAL'}</span>
+                          </div>
+                          <div style={{ fontSize: '10px', color: 'var(--app-muted)', display: 'flex', justifyContent: 'space-between' }}>
+                            <span>Points: {routeItem?.points || '0'} | Load: {routeItem?.load || 0}</span>
+                            <span style={{ color: '#38bdf8' }}>{routeItem?.sla || '0%'} SLA</span>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                  {filteredRouteCodes.length === 0 && (<div style={{ padding: '20px', textAlign: 'center', color: 'var(--app-muted)', fontSize: '11px', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '8px' }}>Kode rute tidak ditemukan dalam sistem.</div>)}
+                      );
+                    })}
+                    {filteredRouteCodes.length === 0 && (<div style={{ padding: '20px', textAlign: 'center', color: 'var(--app-muted)', fontSize: '11px', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '8px' }}>Rute tidak ditemukan.</div>)}
+                  </div>
                 </div>
 
                 <div style={{ border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', overflow: 'hidden', height: '420px', background: 'rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ padding: '12px 16px', background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: 'var(--app-accent)', fontSize: '11px', fontWeight: 'bold', fontFamily: 'monospace' }}>🎯 Rute Terpilih: {selectedRouteCode || 'Pilih Rute'}</span>
+                  {/* ADVANCE FEATURE: LIVE CREW METADATA PANEL */}
+                  <div style={{ padding: '10px 16px', background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <span style={{ color: 'var(--app-accent)', fontSize: '11px', fontWeight: 'bold', fontFamily: 'monospace' }}>🎯 Rute: {selectedRouteCode || 'Pilih Rute'}</span>
+                    <span style={{ fontSize: '10px', color: '#cbd5e1' }}>Kru: <strong style={{ color: '#fbbf24' }}>{selectedRouteDetails?.assignedCrew || 'Unassigned'}</strong></span>
                   </div>
+
                   <div style={{ flex: 1, width: '100%', position: 'relative' }}>
                     {selectedRouteCode ? (
                       <iframe width="100%" height="100%" style={{ border: 0, position: 'absolute', top: 0, left: 0 }} allowFullScreen loading="lazy" src={renderMapsUrl()}></iframe>
