@@ -498,14 +498,16 @@ export default function App() {
         .kpi-card { background: rgba(17, 24, 39, 0.6) !important; backdrop-filter: blur(12px) !important; border: 1px solid rgba(255,255,255,0.04); }
         .selected-week { background: rgba(14, 165, 233, 0.3) !important; color: #fff !important; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.5); }
         
-        /* Layout PC: Sidebar rapat ke kiri, konten langsung pepet dengan sidebar */
+        /* Sidebar Floating & Konten Diperlebar Sepenuhnya ke Kiri */
         @media (min-width: 769px) {
           .sidebar-fixed {
-            width: 64px; position: fixed; left: 0; top: 0; bottom: 0; z-index: 50;
-            background: rgba(15, 23, 42, 0.95) !important; border-right: 1px solid rgba(255,255,255,0.05);
+            width: 64px; position: fixed; left: 0; top: 0; bottom: 0; z-index: 100;
+            background: rgba(15, 23, 42, 0.95) !important; backdrop-filter: blur(8px);
+            border-right: 1px solid rgba(255,255,255,0.05);
             display: flex; flex-direction: column; align-items: center; padding-top: 20px;
           }
-          .main-content { margin-left: 64px; transition: margin-left 0.3s; padding: 16px 16px 16px 12px; }
+          /* Menghilangkan margin-left besar dan menggantinya dengan padding pas setinggi sidebar (64px + 8px gap) */
+          .main-content { margin-left: 0 !important; padding: 16px 20px 16px 74px !important; transition: padding 0.3s; }
           .nav-item-icon { 
             display: flex; justify-content: center; align-items: center; width: 40px; height: 40px; 
             border-radius: 10px; margin: 8px 0; color: #cbd5e1; cursor: pointer; transition: all 0.2s; position: relative;
