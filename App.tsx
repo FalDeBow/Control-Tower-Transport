@@ -34,6 +34,24 @@ const formatDateKey = (val: any) => {
   return str.substring(0, 10);
 };
 
+// --- HELPER MINGGUAN (WEEKLY) ---
+const getWeekRange = (dateString: string) => {
+  const date = new Date(dateString);
+  const day = date.getDay() || 7; // Buat hari Minggu jadi 7
+  date.setHours(-24 * (day - 1)); // Set ke Senin
+  const start = new Date(date);
+  date.setHours(24 * 6); // Set ke Minggu
+  const end = new Date(date);
+  return { start, end };
+};
+
+const isDateInSameWeek = (targetDateStr: string, selectedDateStr: string) => {
+  if (!targetDateStr) return false;
+  const targetDate = new Date(targetDateStr);
+  const { start, end } = getWeekRange(selectedDateStr);
+  return targetDate >= start && targetDate <= end;
+};
+
 // --- KOMPONEN ACCORDION (MOBILE) ---
 const RouteAccordion = ({ rute, badgeClass }: any) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -114,7 +132,8 @@ export default function App() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [pinSearchQuery, setPinSearchQuery] = useState('');
-  const [mode, setMode] = useState('monthly');
+  const [crewSearchQuery, setCrewSearchQuery] = useState('');
+  const [mode, setMode] = useState('monthly'); // monthly, weekly, daily
   const [selectedDate, setSelectedDate] = useState('2026-08-27');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedRouteCode, setSelectedRouteCode] = useState('');
@@ -152,12 +171,14 @@ export default function App() {
   useEffect(() => {
     if (!rawGasData || rawGasData.length === 0) return;
 
-    const filtered = mode === 'monthly'
-      ? rawGasData
-      : rawGasData.filter((d: any) => {
-          const rawTgl = d['Tanggal Ops'] || '';
-          return formatDateKey(rawTgl) === selectedDate;
-        });
+    // FILTERING BASED ON MODE (DAILY, WEEKLY, MONTHLY)
+    const filtered = rawGasData.filter((d: any) => {
+        const rawTgl = formatDateKey(d['Tanggal Ops'] || '');
+        if (mode === 'monthly') return true; 
+        if (mode === 'daily') return rawTgl === selectedDate;
+        if (mode === 'weekly') return isDateInSameWeek(rawTgl, selectedDate);
+        return true;
+    });
 
     let tripSet = new Set();
     let totalPurePU = 0;
@@ -169,6 +190,7 @@ export default function App() {
     let routeMap: any = {};
     let unitCapacityMap: any = {}; 
     let pointTrendMap: any = {};
+    let crewMap: any = {}; // Untuk Satmob & Asmob
     let pointRows: any[] = [];
 
     rawGasData.forEach((d: any) => {
@@ -184,21 +206,22 @@ export default function App() {
 
     filtered.forEach((d: any) => {
       const rute = String(d['Kode Rute'] || 'UNASSIGNED').trim();
-      const driver = String(d['Satmob/Driver'] || '-').trim();
+      const driver = String(d['Satmob/Driver'] || 'Driver Unassigned').trim();
+      const helper = String(d['Asmob/Helper'] || 'Helper Unassigned').trim();
       const unitType = String(d['Tipe Unit'] || 'Standard').trim();
-      const tgl = d['Tanggal Ops'] || '';
+      const tgl = formatDateKey(d['Tanggal Ops'] || '');
       const dateRute = `${tgl}_${rute}_${driver}`;
       tripSet.add(dateRute);
 
       const kategori = String(d['Kategori'] || '').toLowerCase();
       const isPickUp = kategori.includes('pickup') || kategori.includes('pick');
       const isDrop = kategori.includes('ss') || kategori.includes('drop');
-      
       const paket = Number(d['Jumlah PU']) || 0;
       
       if (isPickUp) totalPurePU += paket;
       if (isDrop) totalPureDrop += paket;
 
+      // Unit Map
       if (!unitCapacityMap[unitType]) {
         unitCapacityMap[unitType] = { totalLoad: 0, tripCount: new Set(), routes: new Set() };
       }
@@ -206,6 +229,7 @@ export default function App() {
       unitCapacityMap[unitType].tripCount.add(dateRute);
       unitCapacityMap[unitType].routes.add(rute);
 
+      // Delay Logic
       const eta = d['ETA'] ? String(d['ETA']) : '-';
       const ata = d['ATA'] ? String(d['ATA']) : '-';
       let delay = 0;
@@ -224,6 +248,7 @@ export default function App() {
           delayCount++;
       }
 
+      // Route Map
       if (!routeMap[rute]) routeMap[rute] = { points: 0, pu: 0, drop: 0, onTime: 0, totalDelay: 0, delayCount: 0 };
       routeMap[rute].points++;
       if (isPickUp) routeMap[rute].pu += paket;
@@ -231,6 +256,28 @@ export default function App() {
       if (delay <= 0) routeMap[rute].onTime++;
       if (delay > 0) { routeMap[rute].totalDelay += delay; routeMap[rute].delayCount++; }
 
+      // --- CREW PRODUCTIVITY MAP (ADVANCED) ---
+      const crewKey = `${driver} | ${helper}`;
+      if (!crewMap[crewKey]) {
+          crewMap[crewKey] = {
+              driver,
+              helper,
+              trips: new Set(),
+              totalPoints: 0,
+              totalPU: 0,
+              totalDrop: 0,
+              onTimePoints: 0,
+              delayPoints: 0
+          };
+      }
+      crewMap[crewKey].trips.add(dateRute);
+      crewMap[crewKey].totalPoints++;
+      if (isPickUp) crewMap[crewKey].totalPU += paket;
+      if (isDrop) crewMap[crewKey].totalDrop += paket;
+      if (delay <= 0) crewMap[crewKey].onTimePoints++;
+      else crewMap[crewKey].delayPoints++;
+
+      // Point Rows
       pointRows.push({
          name: d['Pin Point'] || 'Unknown',
          visit: ata,
@@ -245,6 +292,7 @@ export default function App() {
     const overallSlaPct = totalWorkloadEffort > 0 ? Math.round((onTimeCount / totalWorkloadEffort) * 100) : 0;
     const overallLoadPct = tripCount > 0 ? Math.min(100, Math.round(((totalPurePU + totalPureDrop) / (tripCount * 150)) * 100)) : 0;
 
+    // Compile Route Rows
     const routeRows = Object.keys(routeMap).map(rute => {
        const r = routeMap[rute];
        const sla = r.points > 0 ? Math.round((r.onTime / r.points) * 100) : 0;
@@ -264,6 +312,36 @@ export default function App() {
           status: status
        };
     }).sort((a,b) => b.load - a.load);
+
+    // Compile Crew Rows (Advance AI Grading)
+    const crewRows = Object.keys(crewMap).map(key => {
+        const c = crewMap[key];
+        const tripVal = c.trips.size;
+        const totalLoad = c.totalPU + c.totalDrop;
+        const slaVal = c.totalPoints > 0 ? Math.round((c.onTimePoints / c.totalPoints) * 100) : 0;
+        
+        // Advanced Scoring Logic (Grade A, B, C, D)
+        // Score = 60% based on SLA + 40% based on Load Capacity handling (assuming max optimal is 100 pkt per point average)
+        let grade = 'D (Underperform)';
+        let badgeColor = 'badge-critical';
+        
+        if (slaVal >= 95 && totalLoad > 50) { grade = 'A (Excellent)'; badgeColor = 'badge-optimal'; }
+        else if (slaVal >= 85) { grade = 'B (Good)'; badgeColor = 'badge-warning'; }
+        else if (slaVal >= 70) { grade = 'C (Average)'; badgeColor = 'badge-warning'; }
+
+        return {
+            driver: c.driver,
+            helper: c.helper,
+            tripCount: tripVal,
+            points: c.totalPoints,
+            loadPU: c.totalPU,
+            loadDrop: c.totalDrop,
+            totalLoad: totalLoad,
+            sla: `${slaVal}%`,
+            grade: grade,
+            badgeColor: badgeColor
+        };
+    }).sort((a,b) => b.totalLoad - a.totalLoad);
 
     const pointTrendHighlights = Object.keys(pointTrendMap).map(pointName => {
       const pData = pointTrendMap[pointName];
@@ -309,6 +387,7 @@ export default function App() {
     setDashboardData({
        kpi: { tripCount, totalPurePU, totalPureDrop, totalWorkloadEffort, overallSlaPct, overallLoadPct },
        routeRows,
+       crewRows,
        pointRows,
        chartData,
        unitInsights,
@@ -324,12 +403,18 @@ export default function App() {
   const filteredRoutes = dashboardData?.routeRows?.filter((r: any) => r.code.toLowerCase().includes(searchQuery.toLowerCase())) || [];
   const filteredPoints = dashboardData?.pointRows?.filter((p: any) => p.name.toLowerCase().includes(searchQuery.toLowerCase())) || [];
   
+  // Search filter untuk driver atau helper
+  const filteredCrews = dashboardData?.crewRows?.filter((c: any) => 
+      c.driver.toLowerCase().includes(crewSearchQuery.toLowerCase()) || 
+      c.helper.toLowerCase().includes(crewSearchQuery.toLowerCase())
+  ) || [];
+
   const validRouteCodes = dashboardData?.routeRows?.map((r: any) => r.code) || [];
   const filteredRouteCodes = validRouteCodes.filter((code: string) => code.toLowerCase().includes(pinSearchQuery.toLowerCase()));
 
   const getBadgeClass = (s: string) => !s ? 'badge-optimal' : s.includes('WARNING') ? 'badge-warning' : s.includes('CRITICAL') ? 'badge-critical' : 'badge-optimal';
 
-  // --- CONFIGURASI GRAFIK KACA (GLASSMORPHISM CHART.JS) ---
+  // --- CONFIGURASI GRAFIK KACA (GLASSMORPHISM) ---
   const glassDoughnutData = {
     labels: dashboardData?.chartData?.labels || [],
     datasets: [{
@@ -350,19 +435,8 @@ export default function App() {
     maintainAspectRatio: false,
     cutout: '78%',
     plugins: {
-      legend: {
-        position: 'bottom' as const,
-        labels: { color: '#94a3b8', boxWidth: 10, font: { size: 11 }, padding: 16 }
-      },
-      tooltip: {
-        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-        titleColor: '#38bdf8',
-        bodyColor: '#f8fafc',
-        borderColor: 'rgba(56, 189, 248, 0.3)',
-        borderWidth: 1,
-        padding: 12,
-        cornerRadius: 8,
-      }
+      legend: { position: 'bottom' as const, labels: { color: '#94a3b8', boxWidth: 10, font: { size: 11 }, padding: 16 } },
+      tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', titleColor: '#38bdf8', bodyColor: '#f8fafc', borderColor: 'rgba(56, 189, 248, 0.3)', borderWidth: 1, padding: 12, cornerRadius: 8 }
     }
   };
 
@@ -375,7 +449,6 @@ export default function App() {
       borderColor: 'rgba(56, 189, 248, 0.9)',
       borderWidth: { top: 2, right: 0, bottom: 0, left: 0 },
       borderRadius: 6,
-      borderSkipped: false,
     }]
   };
 
@@ -383,29 +456,10 @@ export default function App() {
     responsive: true,
     maintainAspectRatio: false,
     scales: {
-      y: {
-        min: 0,
-        max: 100,
-        grid: { color: 'rgba(255, 255, 255, 0.03)' },
-        ticks: { color: '#64748b', font: { size: 10 } }
-      },
-      x: {
-        grid: { display: false },
-        ticks: { color: '#94a3b8', font: { size: 10 } }
-      }
+      y: { min: 0, max: 100, grid: { color: 'rgba(255, 255, 255, 0.03)' }, ticks: { color: '#64748b', font: { size: 10 } } },
+      x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } }
     },
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-        titleColor: '#38bdf8',
-        bodyColor: '#f8fafc',
-        borderColor: 'rgba(56, 189, 248, 0.3)',
-        borderWidth: 1,
-        padding: 12,
-        cornerRadius: 8,
-      }
-    }
+    plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', titleColor: '#38bdf8', bodyColor: '#f8fafc', borderColor: 'rgba(56, 189, 248, 0.3)', borderWidth: 1, padding: 12, cornerRadius: 8 } }
   };
 
   const renderCalendar = () => {
@@ -413,8 +467,20 @@ export default function App() {
     for (let i = 26; i <= 31; i++) days.push(<div key={`prev-${i}`} className="cal-cell-mini other-month">{i}</div>);
     for (let d = 1; d <= 31; d++) {
       let dateStr = `2026-08-${d < 10 ? '0' + d : d}`;
+      
+      // Visual feedback untuk "Weekly" seleksi
+      let isSelectedWeek = false;
+      if (mode === 'weekly') {
+          isSelectedWeek = isDateInSameWeek(dateStr, selectedDate);
+      }
+
+      const classNames = `cal-cell-mini ${mode === 'daily' && dateStr === selectedDate ? 'selected' : ''} ${isSelectedWeek ? 'selected-week' : ''}`;
+
       days.push(
-        <div key={d} className={`cal-cell-mini ${mode === 'daily' && dateStr === selectedDate ? 'selected' : ''}`} onClick={() => { setMode('daily'); setSelectedDate(dateStr); }}>
+        <div key={d} className={classNames} onClick={() => { 
+            if(mode === 'monthly') setMode('daily'); // default behavior fallback
+            setSelectedDate(dateStr); 
+        }}>
           {d}
         </div>
       );
@@ -445,6 +511,7 @@ export default function App() {
         .card-panel { background: rgba(17, 24, 39, 0.6) !important; backdrop-filter: blur(12px) !important; -webkit-backdrop-filter: blur(12px) !important; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; }
         .sidebar { background: rgba(17, 24, 39, 0.6) !important; backdrop-filter: blur(16px) !important; -webkit-backdrop-filter: blur(16px) !important; }
         .kpi-card { background: rgba(17, 24, 39, 0.6) !important; backdrop-filter: blur(12px) !important; border: 1px solid rgba(255,255,255,0.04); }
+        .selected-week { background: rgba(14, 165, 233, 0.3) !important; color: #fff !important; border-radius: 4px; }
       `}</style>
 
       <div className="ambient-bg"></div>
@@ -473,15 +540,17 @@ export default function App() {
           <div className={`nav-item ${activeMenu === 'overview' ? 'active' : ''}`} onClick={() => handleMenuClick('overview')}>📊 Overview</div>
           <div className={`nav-item ${activeMenu === 'units' ? 'active' : ''}`} onClick={() => handleMenuClick('units')}>🚐 Fleet AI</div>
           <div className={`nav-item ${activeMenu === 'routes' ? 'active' : ''}`} onClick={() => handleMenuClick('routes')}>🚚 Route SLA</div>
+          <div className={`nav-item ${activeMenu === 'crew' ? 'active' : ''}`} onClick={() => handleMenuClick('crew')}>👨‍✈️ Crew Performance</div>
           <div className={`nav-item ${activeMenu === 'points' ? 'active' : ''}`} onClick={() => handleMenuClick('points')}>📍 Point AI Hub</div>
           <div className={`nav-item ${activeMenu === 'geotag' ? 'active' : ''}`} onClick={() => handleMenuClick('geotag')}>🗺️ GPS Live</div>
         </div>
 
         <div style={{ marginTop: 'auto' }}>
           <label style={{ fontSize: '10px', color: 'var(--app-muted)', fontWeight: 700, display: 'block', marginBottom: '8px', letterSpacing: '0.5px' }}>📅 PERIODE ANALISIS</label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
-            <button className={`mode-btn ${mode === 'monthly' ? 'active' : ''}`} onClick={() => setMode('monthly')}>📈 Bulanan</button>
-            <button className={`mode-btn ${mode === 'daily' ? 'active' : ''}`} onClick={() => setMode('daily')}>📅 Harian</button>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px', marginBottom: '12px' }}>
+            <button className={`mode-btn ${mode === 'monthly' ? 'active' : ''}`} style={{ fontSize: '9px', padding: '6px' }} onClick={() => setMode('monthly')}>Semua</button>
+            <button className={`mode-btn ${mode === 'weekly' ? 'active' : ''}`} style={{ fontSize: '9px', padding: '6px' }} onClick={() => setMode('weekly')}>Mingguan</button>
+            <button className={`mode-btn ${mode === 'daily' ? 'active' : ''}`} style={{ fontSize: '9px', padding: '6px' }} onClick={() => setMode('daily')}>Harian</button>
           </div>
           <div className="sidebar-calendar">
             <div className="cal-header-mini">
@@ -574,7 +643,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* GRAFIK OVERVIEW DENGAN GAYA GLASSMORPHISM MENGKILAP */}
+              {/* GRAFIK OVERVIEW */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
                 <div className="card-panel" style={{ padding: '20px' }}>
                   <div className="panel-header" style={{ marginBottom: '12px' }}><h3>🍰 Distribusi Workload Seluruh Rute</h3></div>
@@ -597,6 +666,7 @@ export default function App() {
             </>
           )}
 
+          {/* MENU 1: UNITS */}
           {activeMenu === 'units' && (
             <div className="card-panel" style={{ padding: '24px' }}>
               <div className="panel-header" style={{ marginBottom: '16px' }}>
@@ -630,6 +700,7 @@ export default function App() {
             </div>
           )}
 
+          {/* MENU 2: ROUTES */}
           {activeMenu === 'routes' && (
             <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
               <div className="panel-header" style={{ padding: '20px 20px 0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -661,6 +732,73 @@ export default function App() {
             </div>
           )}
 
+          {/* MENU BARU 3: CREW PERFORMANCE (ADVANCED) */}
+          {activeMenu === 'crew' && (
+            <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="panel-header" style={{ padding: '20px 20px 10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                <div>
+                  <h3 style={{ color: '#38bdf8', fontSize: '16px' }}>👨‍✈️ AI Crew Performance Matrix</h3>
+                  <span style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Grading kombinasi kerja Satmob & Asmob berdasar kapasitas angkut dan ketepatan SLA</span>
+                </div>
+                <input 
+                  type="text" 
+                  placeholder="Cari Driver / Helper..." 
+                  value={crewSearchQuery} 
+                  onChange={(e) => setCrewSearchQuery(e.target.value)} 
+                  style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: '#fff', fontSize: '11px', outline: 'none', width: '100%', maxWidth: '240px' }} 
+                />
+              </div>
+
+              <div style={{ overflowX: 'auto', padding: '0 20px 20px 20px' }}>
+                <table className="desktop-table-view" style={{ width: '100%', minWidth: '850px', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th>SATMOB (DRIVER)</th>
+                      <th>ASMOB (HELPER)</th>
+                      <th>TRIP / POINT</th>
+                      <th>LOAD (PU / DROP)</th>
+                      <th>SLA %</th>
+                      <th>PERFORMANCE GRADE</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredCrews.map((c: any, i: number) => (
+                      <tr key={i}>
+                        <td style={{ color: '#f8fafc', fontWeight: 'bold' }}>👤 {c.driver}</td>
+                        <td style={{ color: '#cbd5e1' }}>🤝 {c.helper}</td>
+                        <td>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ color: '#38bdf8', fontWeight: 'bold' }}>{c.tripCount} Trip</span>
+                            <span style={{ fontSize: '10px', color: '#94a3b8' }}>{c.points} Titik Stop</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ color: '#fff', fontWeight: 'bold' }}>Total: {c.totalLoad} Pkt</span>
+                            <span style={{ fontSize: '10px', color: '#94a3b8' }}>PU: {c.loadPU} | Drop: {c.loadDrop}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <strong style={{ color: parseInt(c.sla) >= 85 ? '#10b981' : '#f87171' }}>{c.sla}</strong>
+                            <div style={{ width: '50px', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
+                              <div style={{ width: c.sla, height: '100%', background: parseInt(c.sla) >= 85 ? '#10b981' : '#f87171' }}></div>
+                            </div>
+                          </div>
+                        </td>
+                        <td><span className={`badge ${c.badgeColor}`}>{c.grade}</span></td>
+                      </tr>
+                    ))}
+                    {filteredCrews.length === 0 && (
+                      <tr><td colSpan={6} style={{ textAlign: 'center', padding: '24px', color: 'var(--app-muted)' }}>Data kru tidak ditemukan</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* MENU 4: POINTS */}
           {activeMenu === 'points' && (
             <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
               <div className="panel-header" style={{ padding: '20px 20px 0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -690,6 +828,7 @@ export default function App() {
             </div>
           )}
 
+          {/* MENU 5: GEOTAG */}
           {activeMenu === 'geotag' && (
             <div className="card-panel">
               <div className="panel-header" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
