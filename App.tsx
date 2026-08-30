@@ -11,16 +11,9 @@ import {
 import { Doughnut, Bar } from 'react-chartjs-2';
 import './index.css';
 
-ChartJS.register(
-  ArcElement,
-  Tooltip,
-  Legend,
-  BarElement,
-  CategoryScale,
-  LinearScale
-);
+ChartJS.register(ArcElement, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
 
-// --- HELPER FORMAT TANGGAL ROBUST ---
+// --- HELPER FORMAT TANGGAL ---
 const formatDateKey = (val: any) => {
   if (!val) return '';
   const str = String(val);
@@ -34,7 +27,6 @@ const formatDateKey = (val: any) => {
   return str.substring(0, 10);
 };
 
-// --- HELPER MINGGUAN (WEEKLY) ---
 const getWeekRange = (dateString: string) => {
   const date = new Date(dateString);
   const day = date.getDay() || 7; 
@@ -52,13 +44,25 @@ const isDateInSameWeek = (targetDateStr: string, selectedDateStr: string) => {
   return targetDate >= start && targetDate <= end;
 };
 
+// --- ICON SVG (OUTLINE / RANGKA) ---
+const Icons = {
+  Menu: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'20px', height:'20px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>,
+  Overview: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'20px', height:'20px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>,
+  Fleet: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'20px', height:'20px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" /></svg>,
+  Routes: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'20px', height:'20px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" /></svg>,
+  Crew: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'20px', height:'20px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>,
+  Points: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'20px', height:'20px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>,
+  GPS: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'20px', height:'20px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zm-7.518-.267A8.25 8.25 0 1120.25 10.5M8.288 14.212A5.25 5.25 0 1117.25 10.5" /></svg>,
+  Search: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'18px', height:'18px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>,
+};
+
 // --- KOMPONEN ACCORDION (MOBILE) ---
 const RouteAccordion = ({ rute, badgeClass }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="accordion-item" style={{ backdropFilter: 'blur(10px)', background: 'rgba(255,255,255,0.03)' }}>
       <div className="accordion-header" onClick={() => setIsOpen(!isOpen)}>
-        <span className="accordion-title" style={{ color: '#38bdf8', fontFamily: 'monospace', fontSize: '14px', letterSpacing: '1px' }}>🚚 {rute.code}</span>
+        <span className="accordion-title" style={{ color: '#38bdf8', fontFamily: 'monospace', fontSize: '14px', letterSpacing: '1px' }}>{rute.code}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '11px', color: '#cbd5e1' }}>Load: <strong style={{ color: '#38bdf8' }}>{rute.load}</strong></span>
           <span className={`badge ${badgeClass}`}>{rute.status}</span>
@@ -91,12 +95,52 @@ const RouteAccordion = ({ rute, badgeClass }: any) => {
   );
 };
 
+const CrewAccordion = ({ crew }: any) => {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <div className="accordion-item" style={{ backdropFilter: 'blur(10px)', background: 'rgba(255,255,255,0.03)' }}>
+      <div className="accordion-header" onClick={() => setIsOpen(!isOpen)}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+           <span className="accordion-title" style={{ color: '#f8fafc', fontSize: '13px' }}>{crew.driver}</span>
+           <span style={{ fontSize: '10px', color: '#94a3b8' }}>+ {crew.helper}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span className={`badge ${crew.badgeColor}`}>{crew.grade}</span>
+          <span style={{ fontSize: '10px', color: '#94a3b8' }}>{isOpen ? '▲' : '▼'}</span>
+        </div>
+      </div>
+      {isOpen && (
+        <div className="accordion-body" style={{ background: 'rgba(0,0,0,0.3)', padding: '16px' }}>
+           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>Total Trip</span>
+              <strong style={{ color: '#38bdf8' }}>{crew.tripCount}</strong>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>Total Load</span>
+              <strong style={{ color: '#f8fafc' }}>{crew.totalLoad} Pkt</strong>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
+              <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>SLA On-Time</span>
+              <strong style={{ color: parseInt(crew.sla) >= 85 ? '#10b981' : '#f87171' }}>{crew.sla}</strong>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
+              <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>PU / Drop</span>
+              <strong style={{ color: '#cbd5e1' }}>{crew.loadPU} / {crew.loadDrop}</strong>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const PointAccordion = ({ point, badgeClass }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="accordion-item" style={{ backdropFilter: 'blur(10px)', background: 'rgba(255,255,255,0.03)' }}>
       <div className="accordion-header" onClick={() => setIsOpen(!isOpen)}>
-        <span className="accordion-title" style={{ color: '#38bdf8', fontFamily: 'monospace', fontSize: '14px', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📍 {point.name}</span>
+        <span className="accordion-title" style={{ color: '#38bdf8', fontFamily: 'monospace', fontSize: '14px', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{point.name}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span className={`badge ${badgeClass}`}>{point.visit}</span>
           <span style={{ fontSize: '10px', color: '#94a3b8' }}>{isOpen ? '▲' : '▼'}</span>
@@ -133,8 +177,12 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [pinSearchQuery, setPinSearchQuery] = useState('');
   const [crewSearchQuery, setCrewSearchQuery] = useState('');
+  
   const [mode, setMode] = useState('monthly'); 
   const [selectedDate, setSelectedDate] = useState('2026-08-27');
+  
+  // Sidebar State (Gemini Style)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedRouteCode, setSelectedRouteCode] = useState('');
 
@@ -190,7 +238,6 @@ export default function App() {
     let unitCapacityMap: any = {}; 
     let pointRows: any[] = [];
     
-    // Maps khusus Top 10
     let pickupMap: Record<string, number> = {}; 
     let crewMap: any = {}; 
 
@@ -213,7 +260,6 @@ export default function App() {
       if (isPickUp) totalPurePU += paket;
       if (isDrop) totalPureDrop += paket;
 
-      // Filter khusus Pick-up untuk Ranking Overview (Meniadakan Drop)
       if (isPickUp && pinPoint !== 'Unknown') {
           pickupMap[pinPoint] = (pickupMap[pinPoint] || 0) + paket;
       }
@@ -310,7 +356,6 @@ export default function App() {
         };
     }).sort((a,b) => b.totalLoad - a.totalLoad);
 
-    // Proses Top 10 Pickup Points (Hanya Pickup, Drop Diabaikan)
     const topPickupPoints = Object.keys(pickupMap)
       .map(k => ({ name: k, load: pickupMap[k] }))
       .sort((a,b) => b.load - a.load)
@@ -429,7 +474,7 @@ export default function App() {
 
   const handleMenuClick = (menu: string) => {
     setActiveMenu(menu);
-    setIsMobileMenuOpen(false);
+    if (window.innerWidth <= 768) setIsMobileMenuOpen(false);
   };
 
   const renderMapsUrl = () => {
@@ -458,36 +503,49 @@ export default function App() {
         .kpi-card { background: rgba(17, 24, 39, 0.6) !important; backdrop-filter: blur(12px) !important; border: 1px solid rgba(255,255,255,0.04); }
         .selected-week { background: rgba(14, 165, 233, 0.3) !important; color: #fff !important; border-radius: 4px; }
         
-        /* CSS KHUSUS SIDEBAR HOVER & COLLAPSED */
+        /* CSS KHUSUS SIDEBAR GEMINI STYLE */
         @media (min-width: 769px) {
           .sidebar {
-            width: 76px;
+            width: 72px; /* Lebar minimum (collapsed) */
             overflow-x: hidden;
             transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: fixed;
             left: 0; top: 0; bottom: 0;
             z-index: 1000;
-            background: rgba(17, 24, 39, 0.8) !important; 
-            backdrop-filter: blur(16px) !important; 
+            background: rgba(15, 23, 42, 0.95) !important; 
             border-right: 1px solid rgba(255,255,255,0.05);
+            display: flex; flex-direction: column; padding-top: 10px;
           }
-          .sidebar:hover { width: 260px; }
-          .main-content { margin-left: 76px; transition: margin-left 0.3s; }
+          .sidebar.expanded { width: 250px; }
+          .main-content { margin-left: 72px; transition: margin-left 0.3s; padding: 20px; }
+          .sidebar.expanded ~ .main-content { margin-left: 250px; }
           
-          /* Sembunyikan elemen saat collapsed */
-          .sidebar-hide-collapsed { opacity: 0; transition: opacity 0.2s; visibility: hidden; }
-          .sidebar:hover .sidebar-hide-collapsed { opacity: 1; visibility: visible; transition-delay: 0.1s; }
-          
-          .nav-item { display: flex; align-items: center; padding: 14px 20px; white-space: nowrap; gap: 16px; border-radius: 8px; margin: 4px 8px; cursor: pointer; }
-          .nav-item:hover { background: rgba(255,255,255,0.05); }
+          .nav-item { 
+            display: flex; align-items: center; padding: 12px; gap: 16px; border-radius: 8px; margin: 4px 12px; 
+            cursor: pointer; color: #cbd5e1; white-space: nowrap; transition: background 0.2s, color 0.2s;
+          }
+          .nav-item:hover { background: rgba(255,255,255,0.08); color: #f8fafc; }
           .nav-item.active { background: rgba(14, 165, 233, 0.15); color: #38bdf8; }
           
-          .menu-icon { font-size: 18px; min-width: 24px; text-align: center; }
-          .menu-text { opacity: 0; transition: opacity 0.2s; }
-          .sidebar:hover .menu-text { opacity: 1; transition-delay: 0.1s; }
+          .menu-icon { min-width: 24px; display: flex; justify-content: center; }
+          .menu-text { opacity: 0; transition: opacity 0.2s; visibility: hidden; font-size: 13px; font-weight: 500; }
+          .sidebar.expanded .menu-text { opacity: 1; visibility: visible; transition-delay: 0.1s; }
+          
+          .hamburger-btn { 
+            background: none; border: none; color: #cbd5e1; cursor: pointer; padding: 12px; 
+            margin: 10px 12px; border-radius: 8px; display: flex; align-items: center; justify-content: flex-start;
+          }
+          .hamburger-btn:hover { background: rgba(255,255,255,0.08); }
         }
-        
-        /* CSS Khusus Leaderboard / Top 10 */
+
+        /* Top Filter Control Panel */
+        .top-filter-bar {
+           display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; 
+           background: rgba(17, 24, 39, 0.5); border: 1px solid rgba(255,255,255,0.06); 
+           backdrop-filter: blur(10px); padding: 12px 20px; border-radius: 12px; margin-bottom: 20px; gap: 16px;
+        }
+
+        /* CSS Leaderboard / Top 10 */
         .lb-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.04); }
         .lb-row:last-child { border-bottom: none; }
         .lb-rank { margin-right: 12px; font-size: 14px; }
@@ -504,54 +562,33 @@ export default function App() {
         </div>
       )}
 
+      {/* MOBILE OVERLAY */}
       <div className={`mobile-overlay ${isMobileMenuOpen ? 'open' : ''}`} onClick={() => setIsMobileMenuOpen(false)}></div>
 
-      <div className={`sidebar ${isMobileMenuOpen ? 'open' : ''}`}>
-        <h2 style={{ padding: '20px', display: 'flex', alignItems: 'center' }}>
-          <svg style={{ width: '24px', height: '24px', color: 'var(--app-accent)', minWidth: '24px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12" />
-          </svg>
-          <span className="sidebar-hide-collapsed" style={{ marginLeft: '12px', letterSpacing: '1px', fontSize: '15px' }}>TR-GLASS</span>
-        </h2>
+      {/* SIDEBAR GEMINI STYLE */}
+      <div className={`sidebar ${isSidebarOpen ? 'expanded' : ''} ${isMobileMenuOpen ? 'open' : ''}`}>
+        <button className="hamburger-btn" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+          <span className="menu-icon"><Icons.Menu /></span>
+        </button>
 
-        <div className="nav-menu" style={{ marginTop: '10px' }}>
+        <div className="nav-menu" style={{ marginTop: '20px' }}>
           <div className={`nav-item ${activeMenu === 'overview' ? 'active' : ''}`} onClick={() => handleMenuClick('overview')} title="Overview">
-            <span className="menu-icon">📊</span><span className="menu-text">Overview</span>
+            <span className="menu-icon"><Icons.Overview /></span><span className="menu-text">Overview</span>
           </div>
-          <div className={`nav-item ${activeMenu === 'units' ? 'active' : ''}`} onClick={() => handleMenuClick('units')} title="Fleet">
-            <span className="menu-icon">🚐</span><span className="menu-text">Fleet</span>
+          <div className={`nav-item ${activeMenu === 'units' ? 'active' : ''}`} onClick={() => handleMenuClick('units')} title="Fleet Capacity">
+            <span className="menu-icon"><Icons.Fleet /></span><span className="menu-text">Fleet</span>
           </div>
-          <div className={`nav-item ${activeMenu === 'routes' ? 'active' : ''}`} onClick={() => handleMenuClick('routes')} title="Routes">
-            <span className="menu-icon">🚚</span><span className="menu-text">Routes</span>
+          <div className={`nav-item ${activeMenu === 'routes' ? 'active' : ''}`} onClick={() => handleMenuClick('routes')} title="Routes Performance">
+            <span className="menu-icon"><Icons.Routes /></span><span className="menu-text">Routes</span>
           </div>
-          <div className={`nav-item ${activeMenu === 'crew' ? 'active' : ''}`} onClick={() => handleMenuClick('crew')} title="Crew">
-            <span className="menu-icon">👨‍✈️</span><span className="menu-text">Crew</span>
+          <div className={`nav-item ${activeMenu === 'crew' ? 'active' : ''}`} onClick={() => handleMenuClick('crew')} title="Crew Matrix">
+            <span className="menu-icon"><Icons.Crew /></span><span className="menu-text">Crew</span>
           </div>
-          <div className={`nav-item ${activeMenu === 'points' ? 'active' : ''}`} onClick={() => handleMenuClick('points')} title="Points">
-            <span className="menu-icon">📍</span><span className="menu-text">Points</span>
+          <div className={`nav-item ${activeMenu === 'points' ? 'active' : ''}`} onClick={() => handleMenuClick('points')} title="Point Hub">
+            <span className="menu-icon"><Icons.Points /></span><span className="menu-text">Points</span>
           </div>
-          <div className={`nav-item ${activeMenu === 'geotag' ? 'active' : ''}`} onClick={() => handleMenuClick('geotag')} title="GPS Live">
-            <span className="menu-icon">🗺️</span><span className="menu-text">GPS Live</span>
-          </div>
-        </div>
-
-        <div className="sidebar-hide-collapsed" style={{ marginTop: 'auto', padding: '20px' }}>
-          <label style={{ fontSize: '10px', color: 'var(--app-muted)', fontWeight: 700, display: 'block', marginBottom: '8px', letterSpacing: '0.5px' }}>📅 PERIODE ANALISIS</label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px', marginBottom: '12px' }}>
-            <button className={`mode-btn ${mode === 'monthly' ? 'active' : ''}`} style={{ fontSize: '9px', padding: '6px' }} onClick={() => setMode('monthly')}>Semua</button>
-            <button className={`mode-btn ${mode === 'weekly' ? 'active' : ''}`} style={{ fontSize: '9px', padding: '6px' }} onClick={() => setMode('weekly')}>Mingguan</button>
-            <button className={`mode-btn ${mode === 'daily' ? 'active' : ''}`} style={{ fontSize: '9px', padding: '6px' }} onClick={() => setMode('daily')}>Harian</button>
-          </div>
-          <div className="sidebar-calendar">
-            <div className="cal-header-mini">
-              <span>Agustus 2026</span>
-              <span style={{ fontSize: '9px', cursor: 'pointer', background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px' }} onClick={() => setMode('monthly')}>Reset</span>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center' }}>
-              {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map((hari) => <div key={hari} className="cal-day-lbl">{hari}</div>)}
-              {renderCalendar()}
-            </div>
+          <div className={`nav-item ${activeMenu === 'geotag' ? 'active' : ''}`} onClick={() => handleMenuClick('geotag')} title="GPS Maps Live">
+            <span className="menu-icon"><Icons.GPS /></span><span className="menu-text">GPS Live</span>
           </div>
         </div>
       </div>
@@ -569,8 +606,8 @@ export default function App() {
           </div>
 
           <div className="global-search-container">
-            <span className="global-search-icon">🔍</span>
-            <input type="text" className="global-search" placeholder="Cari rute, point..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+            <span className="global-search-icon"><Icons.Search /></span>
+            <input type="text" className="global-search" placeholder="Pencarian cepat..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
 
           <div className="top-bar-right">
@@ -578,12 +615,11 @@ export default function App() {
               <span className="time">{timeString} WIB</span>
               <span className="date">{dateString}</span>
             </div>
-            <div className="action-btn">🔔<div className="notif-badge">3</div></div>
             <div className="user-profile">
               <div className="avatar">GB</div>
               <div className="user-info">
                 <span className="name">Gwe Bowo</span>
-                <span className="role">Control Tower Ops</span>
+                <span className="role">Control Tower</span>
               </div>
             </div>
           </div>
@@ -591,6 +627,26 @@ export default function App() {
 
         <div className="dashboard-container">
           
+          {/* TOP CONTROL PANEL (FILTER WAKTU & KALENDER) */}
+          <div className="top-filter-bar">
+             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--app-muted)' }}>PERIODE DATA:</span>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button className={`mode-btn ${mode === 'monthly' ? 'active' : ''}`} onClick={() => setMode('monthly')}>Semua</button>
+                  <button className={`mode-btn ${mode === 'weekly' ? 'active' : ''}`} onClick={() => setMode('weekly')}>Mingguan</button>
+                  <button className={`mode-btn ${mode === 'daily' ? 'active' : ''}`} onClick={() => setMode('daily')}>Harian</button>
+                </div>
+             </div>
+             
+             {/* Mini Calendar Inline */}
+             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', overflowX: 'auto', paddingBottom: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', marginRight: '8px' }}>Agustus 2026:</span>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  {renderCalendar()}
+                </div>
+             </div>
+          </div>
+
           <div className="kpi-grid">
             <div className="kpi-card"><div className="title">Total Trip</div><div className="value">{dashboardData?.kpi?.tripCount || '0'}</div><div className="subtext">Unit Aktif</div></div>
             <div className="kpi-card"><div className="title">Pure Pick-Up</div><div className="value" style={{ color: '#0ea5e9' }}>{dashboardData?.kpi?.totalPurePU || '0'}</div><div className="subtext">Pengambilan (Pkt)</div></div>
@@ -602,13 +658,13 @@ export default function App() {
 
           {activeMenu === 'overview' && (
             <>
-              {/* SPOTLIGHT TOP 10 DINAMIS BERSKALA ESTETIK */}
+              {/* SPOTLIGHT TOP 10 DINAMIS */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginBottom: '20px' }}>
                 
                 {/* 1. TOP 10 RUTE */}
                 <div className="card-panel" style={{ padding: '16px 20px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '12px' }}>
-                    <span style={{ fontSize: '18px' }}>🚚</span>
+                    <Icons.Routes />
                     <h3 style={{ color: '#f8fafc', fontSize: '14px', margin: 0 }}>Top 10 Rute Terpadat</h3>
                   </div>
                   <div>
@@ -625,10 +681,10 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* 2. TOP 10 PICKUP POINTS (Drop Ditiadakan) */}
+                {/* 2. TOP 10 PICKUP POINTS */}
                 <div className="card-panel" style={{ padding: '16px 20px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '12px' }}>
-                    <span style={{ fontSize: '18px' }}>📍</span>
+                    <Icons.Points />
                     <h3 style={{ color: '#f8fafc', fontSize: '14px', margin: 0 }}>Top 10 Pick-Up Point</h3>
                   </div>
                   <div>
@@ -648,7 +704,7 @@ export default function App() {
                 {/* 3. TOP 10 CREW */}
                 <div className="card-panel" style={{ padding: '16px 20px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '12px' }}>
-                    <span style={{ fontSize: '18px' }}>🎖️</span>
+                    <Icons.Crew />
                     <h3 style={{ color: '#f8fafc', fontSize: '14px', margin: 0 }}>Top 10 Crew Performance</h3>
                   </div>
                   <div>
@@ -698,7 +754,7 @@ export default function App() {
             <div className="card-panel" style={{ padding: '24px' }}>
               <div className="panel-header" style={{ marginBottom: '16px' }}>
                 <h3 style={{ color: '#38bdf8', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  🚐 Fleet Capacity Analysis
+                  Fleet Capacity Analysis
                 </h3>
                 <span style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Evaluasi utilitas beban, kapasitas muatan, dan sebaran rute per jenis armada</span>
               </div>
@@ -727,7 +783,7 @@ export default function App() {
           {activeMenu === 'routes' && (
             <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
               <div className="panel-header" style={{ padding: '20px 20px 0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3>🚚 Route SLA Performance</h3>
+                <h3>Route SLA Performance</h3>
                 <span style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', background: 'rgba(14, 165, 233, 0.15)', color: '#38bdf8' }}>{filteredRoutes.length} Rute Dipantau</span>
               </div>
               
@@ -760,8 +816,8 @@ export default function App() {
             <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
               <div className="panel-header" style={{ padding: '20px 20px 10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                 <div>
-                  <h3 style={{ color: '#38bdf8', fontSize: '16px' }}>👨‍✈️ Crew Performance Matrix</h3>
-                  <span style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Skoring kinerja kombinasi kerja Satmob & Asmob berdasar kapasitas angkut dan ketepatan SLA</span>
+                  <h3 style={{ color: '#38bdf8', fontSize: '16px' }}>Crew Performance Matrix</h3>
+                  <span style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Skoring kinerja kombinasi Satmob & Asmob berdasar kapasitas angkut dan ketepatan SLA</span>
                 </div>
                 <input 
                   type="text" 
@@ -787,8 +843,8 @@ export default function App() {
                   <tbody>
                     {filteredCrews.map((c: any, i: number) => (
                       <tr key={i}>
-                        <td style={{ color: '#f8fafc', fontWeight: 'bold' }}>👤 {c.driver}</td>
-                        <td style={{ color: '#cbd5e1' }}>🤝 {c.helper}</td>
+                        <td style={{ color: '#f8fafc', fontWeight: 'bold' }}>{c.driver}</td>
+                        <td style={{ color: '#cbd5e1' }}>{c.helper}</td>
                         <td>
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span style={{ color: '#38bdf8', fontWeight: 'bold' }}>{c.tripCount} Trip</span>
@@ -817,6 +873,9 @@ export default function App() {
                     )}
                   </tbody>
                 </table>
+                <div className="mobile-accordion-list">
+                  {filteredCrews.map((c: any, i: number) => <CrewAccordion key={i} crew={c} />)}
+                </div>
               </div>
             </div>
           )}
@@ -825,7 +884,7 @@ export default function App() {
           {activeMenu === 'points' && (
             <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
               <div className="panel-header" style={{ padding: '20px 20px 0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3>📍 Point Hub (Pickup & Drop)</h3>
+                <h3>Point Hub (Pickup & Drop)</h3>
                 <span style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399' }}>Live Data</span>
               </div>
               <div style={{ overflowX: 'auto', padding: '0 20px 20px 20px' }}>
@@ -855,7 +914,7 @@ export default function App() {
           {activeMenu === 'geotag' && (
             <div className="card-panel">
               <div className="panel-header" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                <h3>🗺️ GPS Live & History Maps</h3>
+                <h3>GPS Live & History Maps</h3>
                 <input type="text" placeholder="Cari Kode Rute..." value={pinSearchQuery} onChange={(e) => setPinSearchQuery(e.target.value)} style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: '#fff', fontSize: '11px', outline: 'none', width: '100%', maxWidth: '240px', fontFamily: 'monospace' }} />
               </div>
 
