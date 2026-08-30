@@ -480,10 +480,9 @@ export default function App() {
     setIsSlideMenuOpen(false);
   };
 
+  // Menggunakan OpenStreetMap Embed (Stabil, Bebas Blokir iframe, Tanpa Layar Biru)
   const renderMapsUrl = () => {
-    if (!selectedRouteCode) return '';
-    const searchQueryMaps = encodeURIComponent(`${selectedRouteCode} Jakarta Indonesia`);
-    return `https://maps.google.com/maps?q=${searchQueryMaps}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
+    return `https://www.openstreetmap.org/export/embed.html?bbox=106.75,-6.25,106.95,-6.10&layer=mapnik&marker=-6.1751,106.8272`;
   };
 
   const getRankMedal = (idx: number) => {
@@ -1048,7 +1047,7 @@ export default function App() {
                           rel="noreferrer"
                           style={{ fontSize: '10px', background: '#0ea5e9', color: '#fff', padding: '3px 8px', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold' }}
                         >
-                          Buka Maps ↗
+                          Buka Google Maps ↗
                         </a>
                       )}
                     </div>
@@ -1059,7 +1058,7 @@ export default function App() {
                       <iframe 
                         width="100%" 
                         height="100%" 
-                        style={{ border: 0, position: 'absolute', top: 0, left: 0, background: '#0b1329' }} 
+                        style={{ border: 0, position: 'absolute', top: 0, left: 0 }} 
                         allowFullScreen 
                         loading="lazy" 
                         src={renderMapsUrl()}
