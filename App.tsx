@@ -44,9 +44,9 @@ const isDateInSameWeek = (targetDateStr: string, selectedDateStr: string) => {
   return targetDate >= start && targetDate <= end;
 };
 
-// --- ICON SVG (OUTLINE / RANGKA) ---
+// --- ICON SVG (RANGKA/OUTLINE) ---
 const Icons = {
-  Menu: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'20px', height:'20px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>,
+  Menu: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'22px', height:'22px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>,
   Overview: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'20px', height:'20px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>,
   Fleet: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'20px', height:'20px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" /></svg>,
   Routes: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'20px', height:'20px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" /></svg>,
@@ -56,7 +56,7 @@ const Icons = {
   Search: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'18px', height:'18px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>,
 };
 
-// --- KOMPONEN ACCORDION (MOBILE) ---
+// --- KOMPONEN ACCORDION ---
 const RouteAccordion = ({ rute, badgeClass }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
@@ -181,10 +181,7 @@ export default function App() {
   const [mode, setMode] = useState('monthly'); 
   const [selectedDate, setSelectedDate] = useState('2026-08-27');
   
-  // Sidebar State (Gemini Style)
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); 
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [selectedRouteCode, setSelectedRouteCode] = useState('');
+  const [isSlideMenuOpen, setIsSlideMenuOpen] = useState(false); 
 
   const [time, setTime] = useState(new Date());
   useEffect(() => {
@@ -215,7 +212,7 @@ export default function App() {
     fetchRawData();
   }, []);
 
-  // 2. OLAH & ANALISIS DATA
+  // 2. OLAH DATA
   useEffect(() => {
     if (!rawGasData || rawGasData.length === 0) return;
 
@@ -400,7 +397,6 @@ export default function App() {
       c.driver.toLowerCase().includes(crewSearchQuery.toLowerCase()) || 
       c.helper.toLowerCase().includes(crewSearchQuery.toLowerCase())
   ) || [];
-
   const validRouteCodes = dashboardData?.routeRows?.map((r: any) => r.code) || [];
   const filteredRouteCodes = validRouteCodes.filter((code: string) => code.toLowerCase().includes(pinSearchQuery.toLowerCase()));
 
@@ -410,13 +406,8 @@ export default function App() {
     labels: dashboardData?.chartData?.labels || [],
     datasets: [{
       data: dashboardData?.chartData?.workloads || [],
-      backgroundColor: [
-        'rgba(14, 165, 233, 0.75)', 'rgba(56, 189, 248, 0.75)',
-        'rgba(16, 185, 129, 0.75)', 'rgba(245, 158, 11, 0.75)',
-        'rgba(99, 102, 241, 0.75)', 'rgba(236, 72, 153, 0.75)',
-      ],
-      borderColor: 'rgba(255, 255, 255, 0.08)',
-      borderWidth: 2, hoverOffset: 6
+      backgroundColor: ['rgba(14, 165, 233, 0.75)', 'rgba(56, 189, 248, 0.75)', 'rgba(16, 185, 129, 0.75)', 'rgba(245, 158, 11, 0.75)', 'rgba(99, 102, 241, 0.75)', 'rgba(236, 72, 153, 0.75)'],
+      borderColor: 'rgba(255, 255, 255, 0.08)', borderWidth: 2, hoverOffset: 6
     }]
   };
 
@@ -431,12 +422,9 @@ export default function App() {
   const glassBarData = {
     labels: dashboardData?.chartData?.labels || [],
     datasets: [{
-      label: 'SLA (%)',
-      data: dashboardData?.chartData?.slas || [],
-      backgroundColor: 'rgba(14, 165, 233, 0.65)',
-      borderColor: 'rgba(56, 189, 248, 0.9)',
-      borderWidth: { top: 2, right: 0, bottom: 0, left: 0 },
-      borderRadius: 6,
+      label: 'SLA (%)', data: dashboardData?.chartData?.slas || [],
+      backgroundColor: 'rgba(14, 165, 233, 0.65)', borderColor: 'rgba(56, 189, 248, 0.9)',
+      borderWidth: { top: 2, right: 0, bottom: 0, left: 0 }, borderRadius: 6,
     }]
   };
 
@@ -449,32 +437,31 @@ export default function App() {
     plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', titleColor: '#38bdf8', bodyColor: '#f8fafc', borderColor: 'rgba(56, 189, 248, 0.3)', borderWidth: 1, padding: 12, cornerRadius: 8 } }
   };
 
-  const renderCalendar = () => {
-    let days = [];
-    for (let i = 26; i <= 31; i++) days.push(<div key={`prev-${i}`} className="cal-cell-mini other-month">{i}</div>);
+  const renderCalendarUtuh = () => {
+    // Render Kalender Agustus 2026 utuh (7x5)
+    const daysArr = [];
+    const emptyStart = 6; // 1 Agustus 2026 adalah hari Sabtu (index 6, jika 0=Minggu)
+    
+    for(let e = 0; e < emptyStart; e++) {
+      daysArr.push(<div key={`emp-${e}`} className="cal-day empty"></div>);
+    }
     for (let d = 1; d <= 31; d++) {
       let dateStr = `2026-08-${d < 10 ? '0' + d : d}`;
-      let isSelectedWeek = false;
-      if (mode === 'weekly') {
-          isSelectedWeek = isDateInSameWeek(dateStr, selectedDate);
-      }
-      const classNames = `cal-cell-mini ${mode === 'daily' && dateStr === selectedDate ? 'selected' : ''} ${isSelectedWeek ? 'selected-week' : ''}`;
-
-      days.push(
-        <div key={d} className={classNames} onClick={() => { 
-            if(mode === 'monthly') setMode('daily'); 
-            setSelectedDate(dateStr); 
-        }}>
+      let isSelectedWeek = mode === 'weekly' && isDateInSameWeek(dateStr, selectedDate);
+      let isSelectedDay = mode === 'daily' && dateStr === selectedDate;
+      const classNames = `cal-day ${isSelectedDay ? 'selected' : ''} ${isSelectedWeek ? 'selected-week' : ''}`;
+      daysArr.push(
+        <div key={d} className={classNames} onClick={() => { if(mode === 'monthly') setMode('daily'); setSelectedDate(dateStr); }}>
           {d}
         </div>
       );
     }
-    return days;
+    return daysArr;
   };
 
   const handleMenuClick = (menu: string) => {
     setActiveMenu(menu);
-    if (window.innerWidth <= 768) setIsMobileMenuOpen(false);
+    setIsSlideMenuOpen(false); // Tutup slide menu saat diklik
   };
 
   const renderMapsUrl = () => {
@@ -496,61 +483,86 @@ export default function App() {
         .ambient-bg {
           position: fixed; inset: 0; z-index: -1;
           background: radial-gradient(circle at 15% 30%, rgba(14, 165, 233, 0.15) 0%, transparent 40%),
-                      radial-gradient(circle at 85% 70%, rgba(16, 185, 129, 0.1) 0%, transparent 40%),
-                      #070c1b;
+                      radial-gradient(circle at 85% 70%, rgba(16, 185, 129, 0.1) 0%, transparent 40%), #070c1b;
         }
         .card-panel { background: rgba(17, 24, 39, 0.6) !important; backdrop-filter: blur(12px) !important; -webkit-backdrop-filter: blur(12px) !important; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; }
         .kpi-card { background: rgba(17, 24, 39, 0.6) !important; backdrop-filter: blur(12px) !important; border: 1px solid rgba(255,255,255,0.04); }
-        .selected-week { background: rgba(14, 165, 233, 0.3) !important; color: #fff !important; border-radius: 4px; }
+        .selected-week { background: rgba(14, 165, 233, 0.3) !important; color: #fff !important; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.5); }
         
-        /* CSS KHUSUS SIDEBAR GEMINI STYLE */
+        /* SIDEBAR TETAP (ICONS ONLY + TOOLTIP HANYA SAAT HOVER) */
         @media (min-width: 769px) {
-          .sidebar {
-            width: 72px; /* Lebar minimum (collapsed) */
-            overflow-x: hidden;
-            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: fixed;
-            left: 0; top: 0; bottom: 0;
-            z-index: 1000;
-            background: rgba(15, 23, 42, 0.95) !important; 
-            border-right: 1px solid rgba(255,255,255,0.05);
-            display: flex; flex-direction: column; padding-top: 10px;
+          .sidebar-fixed {
+            width: 64px; position: fixed; left: 0; top: 0; bottom: 0; z-index: 50;
+            background: rgba(15, 23, 42, 0.95) !important; border-right: 1px solid rgba(255,255,255,0.05);
+            display: flex; flex-direction: column; align-items: center; padding-top: 20px;
           }
-          .sidebar.expanded { width: 250px; }
-          .main-content { margin-left: 72px; transition: margin-left 0.3s; padding: 20px; }
-          .sidebar.expanded ~ .main-content { margin-left: 250px; }
-          
-          .nav-item { 
-            display: flex; align-items: center; padding: 12px; gap: 16px; border-radius: 8px; margin: 4px 12px; 
-            cursor: pointer; color: #cbd5e1; white-space: nowrap; transition: background 0.2s, color 0.2s;
+          .main-content { margin-left: 64px; transition: margin-left 0.3s; padding: 20px; }
+          .nav-item-icon { 
+            display: flex; justify-content: center; align-items: center; width: 40px; height: 40px; 
+            border-radius: 10px; margin: 8px 0; color: #cbd5e1; cursor: pointer; transition: all 0.2s; position: relative;
           }
-          .nav-item:hover { background: rgba(255,255,255,0.08); color: #f8fafc; }
-          .nav-item.active { background: rgba(14, 165, 233, 0.15); color: #38bdf8; }
+          .nav-item-icon:hover { background: rgba(255,255,255,0.1); color: #f8fafc; }
+          .nav-item-icon.active { background: rgba(14, 165, 233, 0.15); color: #38bdf8; }
           
-          .menu-icon { min-width: 24px; display: flex; justify-content: center; }
-          .menu-text { opacity: 0; transition: opacity 0.2s; visibility: hidden; font-size: 13px; font-weight: 500; }
-          .sidebar.expanded .menu-text { opacity: 1; visibility: visible; transition-delay: 0.1s; }
-          
-          .hamburger-btn { 
-            background: none; border: none; color: #cbd5e1; cursor: pointer; padding: 12px; 
-            margin: 10px 12px; border-radius: 8px; display: flex; align-items: center; justify-content: flex-start;
+          /* Tooltip Custom Melayang saat hover */
+          .nav-item-icon::after {
+            content: attr(data-tooltip); position: absolute; left: 100%; top: 50%; transform: translateY(-50%);
+            margin-left: 10px; background: rgba(15, 23, 42, 0.95); padding: 6px 12px; border-radius: 6px;
+            color: #f8fafc; font-size: 11px; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 0.2s, margin-left 0.2s;
+            border: 1px solid rgba(255,255,255,0.1); z-index: 100;
           }
-          .hamburger-btn:hover { background: rgba(255,255,255,0.08); }
+          .nav-item-icon:hover::after { opacity: 1; margin-left: 16px; }
+          .hamburger-btn-desktop { 
+            background: none; border: none; color: #cbd5e1; cursor: pointer; padding: 10px; border-radius: 8px; margin-bottom: 20px;
+          }
+          .hamburger-btn-desktop:hover { background: rgba(255,255,255,0.1); }
         }
+
+        /* SLIDE MENU OFF-CANVAS (Dinamis / Menu Geser) */
+        .slide-menu-overlay {
+          position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1001; 
+          opacity: 0; visibility: hidden; transition: all 0.3s;
+        }
+        .slide-menu-overlay.open { opacity: 1; visibility: visible; }
+        .slide-menu {
+          position: fixed; left: -280px; top: 0; bottom: 0; width: 260px; background: rgba(15, 23, 42, 0.98); 
+          z-index: 1002; transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-right: 1px solid rgba(255,255,255,0.1);
+          padding: 20px 0;
+        }
+        .slide-menu.open { left: 0; }
+        .slide-menu .nav-item { 
+          display: flex; align-items: center; padding: 14px 24px; gap: 16px; color: #cbd5e1; cursor: pointer; transition: background 0.2s; 
+        }
+        .slide-menu .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .slide-menu .nav-item.active { background: rgba(14, 165, 233, 0.15); color: #38bdf8; border-right: 3px solid #38bdf8; }
 
         /* Top Filter Control Panel */
         .top-filter-bar {
-           display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; 
+           display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; 
            background: rgba(17, 24, 39, 0.5); border: 1px solid rgba(255,255,255,0.06); 
-           backdrop-filter: blur(10px); padding: 12px 20px; border-radius: 12px; margin-bottom: 20px; gap: 16px;
+           backdrop-filter: blur(10px); padding: 16px 24px; border-radius: 14px; margin-bottom: 20px; gap: 24px;
         }
 
-        /* CSS Leaderboard / Top 10 */
-        .lb-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        /* Kalender Utuh Grid */
+        .calendar-grid-wrapper { flex: 1; min-width: 250px; max-width: 320px; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; margin-top: 8px; }
+        .cal-head { font-size: 10px; color: #94a3b8; font-weight: bold; padding-bottom: 4px; }
+        .cal-day { font-size: 11px; padding: 6px 0; border-radius: 6px; cursor: pointer; color: #e2e8f0; background: rgba(0,0,0,0.2); transition: all 0.2s; }
+        .cal-day:hover { background: rgba(255,255,255,0.1); }
+        .cal-day.empty { background: transparent; pointer-events: none; }
+        .cal-day.selected { background: #0ea5e9 !important; color: #fff; font-weight: bold; }
+
+        /* Custom Scrollbar utk Top 10 Card */
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+
+        .lb-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,0.03); }
         .lb-row:last-child { border-bottom: none; }
-        .lb-rank { margin-right: 12px; font-size: 14px; }
-        .lb-name { flex: 1; font-size: 12px; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
-        .lb-val { font-size: 12px; font-weight: bold; color: #38bdf8; margin-left: 10px; }
+        .lb-rank { margin-right: 10px; font-size: 13px; }
+        .lb-name { flex: 1; font-size: 11px; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .lb-val { font-size: 11px; font-weight: bold; color: #38bdf8; margin-left: 8px; }
       `}</style>
 
       <div className="ambient-bg"></div>
@@ -562,42 +574,38 @@ export default function App() {
         </div>
       )}
 
-      {/* MOBILE OVERLAY */}
-      <div className={`mobile-overlay ${isMobileMenuOpen ? 'open' : ''}`} onClick={() => setIsMobileMenuOpen(false)}></div>
-
-      {/* SIDEBAR GEMINI STYLE */}
-      <div className={`sidebar ${isSidebarOpen ? 'expanded' : ''} ${isMobileMenuOpen ? 'open' : ''}`}>
-        <button className="hamburger-btn" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
-          <span className="menu-icon"><Icons.Menu /></span>
-        </button>
-
-        <div className="nav-menu" style={{ marginTop: '20px' }}>
-          <div className={`nav-item ${activeMenu === 'overview' ? 'active' : ''}`} onClick={() => handleMenuClick('overview')} title="Overview">
-            <span className="menu-icon"><Icons.Overview /></span><span className="menu-text">Overview</span>
-          </div>
-          <div className={`nav-item ${activeMenu === 'units' ? 'active' : ''}`} onClick={() => handleMenuClick('units')} title="Fleet Capacity">
-            <span className="menu-icon"><Icons.Fleet /></span><span className="menu-text">Fleet</span>
-          </div>
-          <div className={`nav-item ${activeMenu === 'routes' ? 'active' : ''}`} onClick={() => handleMenuClick('routes')} title="Routes Performance">
-            <span className="menu-icon"><Icons.Routes /></span><span className="menu-text">Routes</span>
-          </div>
-          <div className={`nav-item ${activeMenu === 'crew' ? 'active' : ''}`} onClick={() => handleMenuClick('crew')} title="Crew Matrix">
-            <span className="menu-icon"><Icons.Crew /></span><span className="menu-text">Crew</span>
-          </div>
-          <div className={`nav-item ${activeMenu === 'points' ? 'active' : ''}`} onClick={() => handleMenuClick('points')} title="Point Hub">
-            <span className="menu-icon"><Icons.Points /></span><span className="menu-text">Points</span>
-          </div>
-          <div className={`nav-item ${activeMenu === 'geotag' ? 'active' : ''}`} onClick={() => handleMenuClick('geotag')} title="GPS Maps Live">
-            <span className="menu-icon"><Icons.GPS /></span><span className="menu-text">GPS Live</span>
-          </div>
-        </div>
+      {/* OVERLAY & SLIDE MENU (Dinamis Menu Geser) */}
+      <div className={`slide-menu-overlay ${isSlideMenuOpen ? 'open' : ''}`} onClick={() => setIsSlideMenuOpen(false)}></div>
+      <div className={`slide-menu ${isSlideMenuOpen ? 'open' : ''}`}>
+        <h2 style={{ padding: '0 24px 20px', color: '#f8fafc', fontSize: '16px', letterSpacing: '1px', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '10px' }}>
+          TRANSPORT GLASS
+        </h2>
+        <div className={`nav-item ${activeMenu === 'overview' ? 'active' : ''}`} onClick={() => handleMenuClick('overview')}><Icons.Overview /> <span>Overview</span></div>
+        <div className={`nav-item ${activeMenu === 'units' ? 'active' : ''}`} onClick={() => handleMenuClick('units')}><Icons.Fleet /> <span>Fleet Capacity</span></div>
+        <div className={`nav-item ${activeMenu === 'routes' ? 'active' : ''}`} onClick={() => handleMenuClick('routes')}><Icons.Routes /> <span>Routes Performance</span></div>
+        <div className={`nav-item ${activeMenu === 'crew' ? 'active' : ''}`} onClick={() => handleMenuClick('crew')}><Icons.Crew /> <span>Crew Matrix</span></div>
+        <div className={`nav-item ${activeMenu === 'points' ? 'active' : ''}`} onClick={() => handleMenuClick('points')}><Icons.Points /> <span>Point Hub</span></div>
+        <div className={`nav-item ${activeMenu === 'geotag' ? 'active' : ''}`} onClick={() => handleMenuClick('geotag')}><Icons.GPS /> <span>GPS Live Maps</span></div>
       </div>
 
-      <div className="main-content" style={{ WebkitFontSmoothing: 'antialiased' }}>
+      {/* SIDEBAR PC (HANYA ICON) */}
+      <div className="sidebar-fixed d-none-mobile">
+        <button className="hamburger-btn-desktop" onClick={() => setIsSlideMenuOpen(true)}>
+          <Icons.Menu />
+        </button>
+        <div className={`nav-item-icon ${activeMenu === 'overview' ? 'active' : ''}`} data-tooltip="Overview" onClick={() => handleMenuClick('overview')}><Icons.Overview /></div>
+        <div className={`nav-item-icon ${activeMenu === 'units' ? 'active' : ''}`} data-tooltip="Fleet Capacity" onClick={() => handleMenuClick('units')}><Icons.Fleet /></div>
+        <div className={`nav-item-icon ${activeMenu === 'routes' ? 'active' : ''}`} data-tooltip="Routes Performance" onClick={() => handleMenuClick('routes')}><Icons.Routes /></div>
+        <div className={`nav-item-icon ${activeMenu === 'crew' ? 'active' : ''}`} data-tooltip="Crew Matrix" onClick={() => handleMenuClick('crew')}><Icons.Crew /></div>
+        <div className={`nav-item-icon ${activeMenu === 'points' ? 'active' : ''}`} data-tooltip="Point Hub" onClick={() => handleMenuClick('points')}><Icons.Points /></div>
+        <div className={`nav-item-icon ${activeMenu === 'geotag' ? 'active' : ''}`} data-tooltip="GPS Live Maps" onClick={() => handleMenuClick('geotag')}><Icons.GPS /></div>
+      </div>
+
+      <div className="main-content">
         
         <div className="top-bar">
           <div className="brand-container">
-            <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(true)}>☰</button>
+            <button className="mobile-menu-btn d-show-mobile" onClick={() => setIsSlideMenuOpen(true)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '20px', marginRight: '10px' }}>☰</button>
             <div className="pulse-dot"></div>
             <div className="brand-text">
               <h1>TRANSPORT <span>GLASS</span></h1>
@@ -627,22 +635,30 @@ export default function App() {
 
         <div className="dashboard-container">
           
-          {/* TOP CONTROL PANEL (FILTER WAKTU & KALENDER) */}
+          {/* TOP CONTROL PANEL (FILTER WAKTU & KALENDER UTUH) */}
           <div className="top-filter-bar">
-             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--app-muted)' }}>PERIODE DATA:</span>
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--app-muted)' }}>PERIODE DATA & FILTER</span>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className={`mode-btn ${mode === 'monthly' ? 'active' : ''}`} onClick={() => setMode('monthly')}>Semua</button>
+                  <button className={`mode-btn ${mode === 'monthly' ? 'active' : ''}`} onClick={() => setMode('monthly')}>Bulan Ini</button>
                   <button className={`mode-btn ${mode === 'weekly' ? 'active' : ''}`} onClick={() => setMode('weekly')}>Mingguan</button>
                   <button className={`mode-btn ${mode === 'daily' ? 'active' : ''}`} onClick={() => setMode('daily')}>Harian</button>
                 </div>
+                <div style={{ fontSize: '10px', color: '#64748b', marginTop: '4px' }}>
+                  Status: Menampilkan data {mode === 'monthly' ? 'keseluruhan' : mode === 'weekly' ? 'minggu terpilih' : 'hari terpilih'}
+                </div>
              </div>
              
-             {/* Mini Calendar Inline */}
-             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', overflowX: 'auto', paddingBottom: '4px' }}>
-                <span style={{ fontSize: '10px', color: '#64748b', marginRight: '8px' }}>Agustus 2026:</span>
-                <div style={{ display: 'flex', gap: '4px' }}>
-                  {renderCalendar()}
+             {/* Kalender Utuh Grid */}
+             <div className="calendar-grid-wrapper">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '11px', color: '#e2e8f0', fontWeight: 'bold' }}>🗓️ Agustus 2026</span>
+                  <span style={{ fontSize: '9px', cursor: 'pointer', background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px', color: '#94a3b8' }} onClick={() => setMode('monthly')}>Reset</span>
+                </div>
+                <div className="calendar-grid">
+                  <div className="cal-head">Min</div><div className="cal-head">Sen</div><div className="cal-head">Sel</div>
+                  <div className="cal-head">Rab</div><div className="cal-head">Kam</div><div className="cal-head">Jum</div><div className="cal-head">Sab</div>
+                  {renderCalendarUtuh()}
                 </div>
              </div>
           </div>
@@ -658,16 +674,16 @@ export default function App() {
 
           {activeMenu === 'overview' && (
             <>
-              {/* SPOTLIGHT TOP 10 DINAMIS */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+              {/* SPOTLIGHT TOP 10 DINAMIS (Kompak Tanpa Page Scroll) */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }} className="responsive-grid-3">
                 
                 {/* 1. TOP 10 RUTE */}
-                <div className="card-panel" style={{ padding: '16px 20px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '12px' }}>
+                <div className="card-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px' }}>
                     <Icons.Routes />
-                    <h3 style={{ color: '#f8fafc', fontSize: '14px', margin: 0 }}>Top 10 Rute Terpadat</h3>
+                    <h3 style={{ color: '#f8fafc', fontSize: '13px', margin: 0 }}>Top 10 Rute</h3>
                   </div>
-                  <div>
+                  <div style={{ height: '240px', overflowY: 'auto' }} className="custom-scroll">
                     {dashboardData?.routeRows?.slice(0, 10).map((r: any, idx: number) => (
                       <div className="lb-row" key={idx}>
                         <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -682,12 +698,12 @@ export default function App() {
                 </div>
 
                 {/* 2. TOP 10 PICKUP POINTS */}
-                <div className="card-panel" style={{ padding: '16px 20px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '12px' }}>
+                <div className="card-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px' }}>
                     <Icons.Points />
-                    <h3 style={{ color: '#f8fafc', fontSize: '14px', margin: 0 }}>Top 10 Pick-Up Point</h3>
+                    <h3 style={{ color: '#f8fafc', fontSize: '13px', margin: 0 }}>Top 10 Pick-Up Point</h3>
                   </div>
-                  <div>
+                  <div style={{ height: '240px', overflowY: 'auto' }} className="custom-scroll">
                     {dashboardData?.topPickupPoints?.map((p: any, idx: number) => (
                       <div className="lb-row" key={idx}>
                         <div style={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
@@ -702,12 +718,12 @@ export default function App() {
                 </div>
 
                 {/* 3. TOP 10 CREW */}
-                <div className="card-panel" style={{ padding: '16px 20px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '12px' }}>
+                <div className="card-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px' }}>
                     <Icons.Crew />
-                    <h3 style={{ color: '#f8fafc', fontSize: '14px', margin: 0 }}>Top 10 Crew Performance</h3>
+                    <h3 style={{ color: '#f8fafc', fontSize: '13px', margin: 0 }}>Top 10 Crew</h3>
                   </div>
-                  <div>
+                  <div style={{ height: '240px', overflowY: 'auto' }} className="custom-scroll">
                     {dashboardData?.crewRows?.slice(0, 10).map((c: any, idx: number) => (
                       <div className="lb-row" key={idx}>
                         <div style={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
@@ -731,7 +747,7 @@ export default function App() {
                 <div className="card-panel" style={{ padding: '20px' }}>
                   <div className="panel-header" style={{ marginBottom: '12px' }}><h3>🍰 Distribusi Workload Rute</h3></div>
                   {dashboardData?.chartData?.labels?.length > 0 ? (
-                    <div style={{ position: 'relative', width: '100%', height: '260px' }}>
+                    <div style={{ position: 'relative', width: '100%', height: '240px' }}>
                       <Doughnut data={glassDoughnutData} options={glassDoughnutOptions} />
                     </div>
                   ) : <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Belum ada data grafik untuk ditampilkan</p>}
@@ -740,7 +756,7 @@ export default function App() {
                 <div className="card-panel" style={{ padding: '20px' }}>
                   <div className="panel-header" style={{ marginBottom: '12px' }}><h3>📈 SLA On-Time per Rute (%)</h3></div>
                   {dashboardData?.chartData?.labels?.length > 0 ? (
-                    <div style={{ position: 'relative', width: '100%', height: '260px' }}>
+                    <div style={{ position: 'relative', width: '100%', height: '240px' }}>
                       <Bar data={glassBarData} options={glassBarOptions} />
                     </div>
                   ) : <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Belum ada data SLA untuk ditampilkan</p>}
