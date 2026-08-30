@@ -171,7 +171,18 @@ const PointAccordion = ({ point, badgeClass }: any) => {
 export default function App() {
   const [activeMenu, setActiveMenu] = useState('overview');
   const [rawGasData, setRawGasData] = useState<any[]>([]);
-  const [dashboardData, setDashboardData] = useState<any>(null);
+  
+  // Inisialisasi safe state agar tidak pernah null
+  const [dashboardData, setDashboardData] = useState<any>({
+    kpi: { tripCount: 0, totalPurePU: 0, totalPureDrop: 0, totalWorkloadEffort: 0, overallSlaPct: 0, overallLoadPct: 0 },
+    routeRows: [],
+    crewRows: [],
+    pointRows: [],
+    topPickupPoints: [],
+    chartData: { labels: [], workloads: [], slas: [] },
+    unitInsights: []
+  });
+  
   const [isLoading, setIsLoading] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -180,8 +191,8 @@ export default function App() {
   
   const [mode, setMode] = useState('monthly'); 
   const [selectedDate, setSelectedDate] = useState('2026-08-27');
-  
   const [isSlideMenuOpen, setIsSlideMenuOpen] = useState(false); 
+  const [selectedRouteCode, setSelectedRouteCode] = useState('');
 
   const [time, setTime] = useState(new Date());
   useEffect(() => {
@@ -391,27 +402,21 @@ export default function App() {
 
   }, [rawGasData, mode, selectedDate]);
 
-  // SAFE DESTRUCTURING (Mencegah Crash saat awal loading)
-  const safeRoutes = dashboardData?.routeRows || [];
-  const safePoints = dashboardData?.pointRows || [];
-  const safeCrews = dashboardData?.crewRows || [];
-  const safePickups = dashboardData?.topPickupPoints || [];
-
-  const filteredRoutes = safeRoutes.filter((r: any) => r.code.toLowerCase().includes(searchQuery.toLowerCase()));
-  const filteredPoints = safePoints.filter((p: any) => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
-  const filteredCrews = safeCrews.filter((c: any) => 
+  const filteredRoutes = dashboardData.routeRows.filter((r: any) => r.code.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredPoints = dashboardData.pointRows.filter((p: any) => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredCrews = dashboardData.crewRows.filter((c: any) => 
       c.driver.toLowerCase().includes(crewSearchQuery.toLowerCase()) || 
       c.helper.toLowerCase().includes(crewSearchQuery.toLowerCase())
   );
-  const validRouteCodes = safeRoutes.map((r: any) => r.code);
+  const validRouteCodes = dashboardData.routeRows.map((r: any) => r.code);
   const filteredRouteCodes = validRouteCodes.filter((code: string) => code.toLowerCase().includes(pinSearchQuery.toLowerCase()));
 
   const getBadgeClass = (s: string) => !s ? 'badge-optimal' : s.includes('WARNING') ? 'badge-warning' : s.includes('CRITICAL') ? 'badge-critical' : 'badge-optimal';
 
   const glassDoughnutData = {
-    labels: dashboardData?.chartData?.labels || [],
+    labels: dashboardData.chartData.labels,
     datasets: [{
-      data: dashboardData?.chartData?.workloads || [],
+      data: dashboardData.chartData.workloads,
       backgroundColor: ['rgba(14, 165, 233, 0.75)', 'rgba(56, 189, 248, 0.75)', 'rgba(16, 185, 129, 0.75)', 'rgba(245, 158, 11, 0.75)', 'rgba(99, 102, 241, 0.75)', 'rgba(236, 72, 153, 0.75)'],
       borderColor: 'rgba(255, 255, 255, 0.08)', borderWidth: 2, hoverOffset: 6
     }]
@@ -426,9 +431,9 @@ export default function App() {
   };
 
   const glassBarData = {
-    labels: dashboardData?.chartData?.labels || [],
+    labels: dashboardData.chartData.labels,
     datasets: [{
-      label: 'SLA (%)', data: dashboardData?.chartData?.slas || [],
+      label: 'SLA (%)', data: dashboardData.chartData.slas,
       backgroundColor: 'rgba(14, 165, 233, 0.65)', borderColor: 'rgba(56, 189, 248, 0.9)',
       borderWidth: { top: 2, right: 0, bottom: 0, left: 0 }, borderRadius: 6,
     }]
@@ -494,7 +499,6 @@ export default function App() {
         .kpi-card { background: rgba(17, 24, 39, 0.6) !important; backdrop-filter: blur(12px) !important; border: 1px solid rgba(255,255,255,0.04); }
         .selected-week { background: rgba(14, 165, 233, 0.3) !important; color: #fff !important; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.5); }
         
-        /* HELPER UNTUK MOBILE / PC */
         @media (max-width: 768px) {
           .d-none-mobile { display: none !important; }
         }
@@ -502,7 +506,6 @@ export default function App() {
           .d-show-mobile { display: none !important; }
         }
 
-        /* SIDEBAR TETAP (ICONS ONLY + TOOLTIP HANYA SAAT HOVER) */
         @media (min-width: 769px) {
           .sidebar-fixed {
             width: 64px; position: fixed; left: 0; top: 0; bottom: 0; z-index: 50;
@@ -517,7 +520,6 @@ export default function App() {
           .nav-item-icon:hover { background: rgba(255,255,255,0.1); color: #f8fafc; }
           .nav-item-icon.active { background: rgba(14, 165, 233, 0.15); color: #38bdf8; }
           
-          /* Tooltip Custom Melayang saat hover */
           .nav-item-icon::after {
             content: attr(data-tooltip); position: absolute; left: 100%; top: 50%; transform: translateY(-50%);
             margin-left: 10px; background: rgba(15, 23, 42, 0.95); padding: 6px 12px; border-radius: 6px;
@@ -531,7 +533,6 @@ export default function App() {
           .hamburger-btn-desktop:hover { background: rgba(255,255,255,0.1); }
         }
 
-        /* SLIDE MENU OFF-CANVAS (Dinamis Menu Geser) */
         .slide-menu-overlay {
           position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1001; 
           opacity: 0; visibility: hidden; transition: all 0.3s;
@@ -549,14 +550,12 @@ export default function App() {
         .slide-menu .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
         .slide-menu .nav-item.active { background: rgba(14, 165, 233, 0.15); color: #38bdf8; border-right: 3px solid #38bdf8; }
 
-        /* Top Filter Control Panel */
         .top-filter-bar {
            display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; 
            background: rgba(17, 24, 39, 0.5); border: 1px solid rgba(255,255,255,0.06); 
            backdrop-filter: blur(10px); padding: 16px 24px; border-radius: 14px; margin-bottom: 20px; gap: 24px;
         }
 
-        /* Kalender Utuh Grid */
         .calendar-grid-wrapper { flex: 1; min-width: 250px; max-width: 320px; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; margin-top: 8px; }
         .cal-head { font-size: 10px; color: #94a3b8; font-weight: bold; padding-bottom: 4px; }
@@ -565,7 +564,6 @@ export default function App() {
         .cal-day.empty { background: transparent; pointer-events: none; }
         .cal-day.selected { background: #0ea5e9 !important; color: #fff; font-weight: bold; }
 
-        /* Custom Scrollbar utk Top 10 Card */
         .custom-scroll::-webkit-scrollbar { width: 4px; }
         .custom-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 4px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
@@ -591,7 +589,6 @@ export default function App() {
         </div>
       )}
 
-      {/* OVERLAY & SLIDE MENU (Dinamis Menu Geser) */}
       <div className={`slide-menu-overlay ${isSlideMenuOpen ? 'open' : ''}`} onClick={() => setIsSlideMenuOpen(false)}></div>
       <div className={`slide-menu ${isSlideMenuOpen ? 'open' : ''}`}>
         <h2 style={{ padding: '0 24px 20px', color: '#f8fafc', fontSize: '16px', letterSpacing: '1px', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '10px' }}>
@@ -605,7 +602,6 @@ export default function App() {
         <div className={`nav-item ${activeMenu === 'geotag' ? 'active' : ''}`} onClick={() => handleMenuClick('geotag')}><Icons.GPS /> <span>GPS Live Maps</span></div>
       </div>
 
-      {/* SIDEBAR PC (HANYA ICON) */}
       <div className="sidebar-fixed d-none-mobile">
         <button className="hamburger-btn-desktop" onClick={() => setIsSlideMenuOpen(true)}>
           <Icons.Menu />
@@ -652,7 +648,6 @@ export default function App() {
 
         <div className="dashboard-container">
           
-          {/* TOP CONTROL PANEL (FILTER WAKTU & KALENDER UTUH) */}
           <div className="top-filter-bar">
              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--app-muted)' }}>PERIODE DATA & FILTER</span>
@@ -666,7 +661,6 @@ export default function App() {
                 </div>
              </div>
              
-             {/* Kalender Utuh Grid */}
              <div className="calendar-grid-wrapper">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                   <span style={{ fontSize: '11px', color: '#e2e8f0', fontWeight: 'bold' }}>🗓️ Agustus 2026</span>
@@ -681,27 +675,25 @@ export default function App() {
           </div>
 
           <div className="kpi-grid">
-            <div className="kpi-card"><div className="title">Total Trip</div><div className="value">{dashboardData?.kpi?.tripCount || '0'}</div><div className="subtext">Unit Aktif</div></div>
-            <div className="kpi-card"><div className="title">Pure Pick-Up</div><div className="value" style={{ color: '#0ea5e9' }}>{dashboardData?.kpi?.totalPurePU || '0'}</div><div className="subtext">Pengambilan (Pkt)</div></div>
-            <div className="kpi-card"><div className="title">Pure Drop SS</div><div className="value" style={{ color: '#10b981' }}>{dashboardData?.kpi?.totalPureDrop || '0'}</div><div className="subtext">Penurunan (Pkt)</div></div>
-            <div className="kpi-card"><div className="title">Total Workload</div><div className="value">{dashboardData?.kpi?.totalWorkloadEffort || '0'}</div><div className="subtext">Points Visit</div></div>
-            <div className="kpi-card"><div className="title">SLA On-Time</div><div className="value">{dashboardData?.kpi?.overallSlaPct || '0'}%</div><div className="subtext">Aman (No Delay)</div></div>
-            <div className="kpi-card"><div className="title">Real Load Factor</div><div className="value">{dashboardData?.kpi?.overallLoadPct || '0'}%</div><div className="subtext">Eq-PU Volume</div></div>
+            <div className="kpi-card"><div className="title">Total Trip</div><div className="value">{dashboardData.kpi.tripCount}</div><div className="subtext">Unit Aktif</div></div>
+            <div className="kpi-card"><div className="title">Pure Pick-Up</div><div className="value" style={{ color: '#0ea5e9' }}>{dashboardData.kpi.totalPurePU}</div><div className="subtext">Pengambilan (Pkt)</div></div>
+            <div className="kpi-card"><div className="title">Pure Drop SS</div><div className="value" style={{ color: '#10b981' }}>{dashboardData.kpi.totalPureDrop}</div><div className="subtext">Penurunan (Pkt)</div></div>
+            <div className="kpi-card"><div className="title">Total Workload</div><div className="value">{dashboardData.kpi.totalWorkloadEffort}</div><div className="subtext">Points Visit</div></div>
+            <div className="kpi-card"><div className="title">SLA On-Time</div><div className="value">{dashboardData.kpi.overallSlaPct}%</div><div className="subtext">Aman (No Delay)</div></div>
+            <div className="kpi-card"><div className="title">Real Load Factor</div><div className="value">{dashboardData.kpi.overallLoadPct}%</div><div className="subtext">Eq-PU Volume</div></div>
           </div>
 
           {activeMenu === 'overview' && (
             <>
-              {/* SPOTLIGHT TOP 10 DINAMIS (Kompak Tanpa Page Scroll) */}
-              <div style={{ display: 'grid', gap: '16px', marginBottom: '20px' }} className="responsive-grid-3">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }} className="responsive-grid-3">
                 
-                {/* 1. TOP 10 RUTE */}
                 <div className="card-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px' }}>
                     <Icons.Routes />
                     <h3 style={{ color: '#f8fafc', fontSize: '13px', margin: 0 }}>Top 10 Rute</h3>
                   </div>
                   <div style={{ height: '240px', overflowY: 'auto' }} className="custom-scroll">
-                    {safeRoutes.slice(0, 10).map((r: any, idx: number) => (
+                    {dashboardData.routeRows.slice(0, 10).map((r: any, idx: number) => (
                       <div className="lb-row" key={idx}>
                         <div style={{ display: 'flex', alignItems: 'center' }}>
                           <span className="lb-rank">{getRankMedal(idx)}</span>
@@ -710,18 +702,17 @@ export default function App() {
                         <span className="lb-val">{r.load} Pkt</span>
                       </div>
                     ))}
-                    {safeRoutes.length === 0 && <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Belum ada data rute.</p>}
+                    {dashboardData.routeRows.length === 0 && <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Belum ada data rute.</p>}
                   </div>
                 </div>
 
-                {/* 2. TOP 10 PICKUP POINTS */}
                 <div className="card-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px' }}>
                     <Icons.Points />
                     <h3 style={{ color: '#f8fafc', fontSize: '13px', margin: 0 }}>Top 10 Pick-Up Point</h3>
                   </div>
                   <div style={{ height: '240px', overflowY: 'auto' }} className="custom-scroll">
-                    {safePickups.map((p: any, idx: number) => (
+                    {dashboardData.topPickupPoints.map((p: any, idx: number) => (
                       <div className="lb-row" key={idx}>
                         <div style={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
                           <span className="lb-rank">{getRankMedal(idx)}</span>
@@ -730,18 +721,17 @@ export default function App() {
                         <span className="lb-val" style={{ color: '#10b981' }}>{p.load} Pkt</span>
                       </div>
                     ))}
-                    {safePickups.length === 0 && <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Belum ada data pick-up.</p>}
+                    {dashboardData.topPickupPoints.length === 0 && <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Belum ada data pick-up.</p>}
                   </div>
                 </div>
 
-                {/* 3. TOP 10 CREW */}
                 <div className="card-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px' }}>
                     <Icons.Crew />
                     <h3 style={{ color: '#f8fafc', fontSize: '13px', margin: 0 }}>Top 10 Crew</h3>
                   </div>
                   <div style={{ height: '240px', overflowY: 'auto' }} className="custom-scroll">
-                    {safeCrews.slice(0, 10).map((c: any, idx: number) => (
+                    {dashboardData.crewRows.slice(0, 10).map((c: any, idx: number) => (
                       <div className="lb-row" key={idx}>
                         <div style={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
                           <span className="lb-rank">{getRankMedal(idx)}</span>
@@ -753,17 +743,16 @@ export default function App() {
                         <span className="lb-val" style={{ color: '#fbbf24' }}>{c.totalLoad} Pkt</span>
                       </div>
                     ))}
-                    {safeCrews.length === 0 && <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Belum ada data kru.</p>}
+                    {dashboardData.crewRows.length === 0 && <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Belum ada data kru.</p>}
                   </div>
                 </div>
 
               </div>
 
-              {/* GRAFIK OVERVIEW */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
                 <div className="card-panel" style={{ padding: '20px' }}>
                   <div className="panel-header" style={{ marginBottom: '12px' }}><h3>🍰 Distribusi Workload Rute</h3></div>
-                  {dashboardData?.chartData?.labels?.length > 0 ? (
+                  {dashboardData.chartData.labels.length > 0 ? (
                     <div style={{ position: 'relative', width: '100%', height: '240px' }}>
                       <Doughnut data={glassDoughnutData} options={glassDoughnutOptions} />
                     </div>
@@ -772,7 +761,7 @@ export default function App() {
 
                 <div className="card-panel" style={{ padding: '20px' }}>
                   <div className="panel-header" style={{ marginBottom: '12px' }}><h3>📈 SLA On-Time per Rute (%)</h3></div>
-                  {dashboardData?.chartData?.labels?.length > 0 ? (
+                  {dashboardData.chartData.labels.length > 0 ? (
                     <div style={{ position: 'relative', width: '100%', height: '240px' }}>
                       <Bar data={glassBarData} options={glassBarOptions} />
                     </div>
@@ -782,7 +771,6 @@ export default function App() {
             </>
           )}
 
-          {/* MENU 1: UNITS */}
           {activeMenu === 'units' && (
             <div className="card-panel" style={{ padding: '24px' }}>
               <div className="panel-header" style={{ marginBottom: '16px' }}>
@@ -793,7 +781,7 @@ export default function App() {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginTop: '16px' }}>
-                {dashboardData?.unitInsights?.map((u: any, idx: number) => (
+                {dashboardData.unitInsights.map((u: any, idx: number) => (
                   <div key={idx} style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                       <span style={{ fontWeight: 'bold', color: '#f8fafc', fontSize: '14px' }}>🚐 {u.type}</span>
@@ -812,7 +800,6 @@ export default function App() {
             </div>
           )}
 
-          {/* MENU 2: ROUTES */}
           {activeMenu === 'routes' && (
             <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
               <div className="panel-header" style={{ padding: '20px 20px 0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -844,7 +831,6 @@ export default function App() {
             </div>
           )}
 
-          {/* MENU 3: CREW PERFORMANCE */}
           {activeMenu === 'crew' && (
             <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
               <div className="panel-header" style={{ padding: '20px 20px 10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
@@ -913,7 +899,6 @@ export default function App() {
             </div>
           )}
 
-          {/* MENU 4: POINTS */}
           {activeMenu === 'points' && (
             <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
               <div className="panel-header" style={{ padding: '20px 20px 0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -943,7 +928,6 @@ export default function App() {
             </div>
           )}
 
-          {/* MENU 5: GEOTAG */}
           {activeMenu === 'geotag' && (
             <div className="card-panel">
               <div className="panel-header" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
@@ -955,7 +939,7 @@ export default function App() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '420px', overflowY: 'auto', paddingRight: '6px' }}>
                   {filteredRouteCodes.map((code: string) => {
                     const isSelected = selectedRouteCode === code;
-                    const routeItem = safeRoutes.find((r: any) => r.code === code);
+                    const routeItem = dashboardData.routeRows.find((r: any) => r.code === code);
                     return (
                       <div key={code} onClick={() => setSelectedRouteCode(code)} style={{ padding: '14px', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.2s', border: isSelected ? '1px solid var(--app-accent)' : '1px solid rgba(255,255,255,0.05)', background: isSelected ? 'rgba(56, 189, 248, 0.12)' : 'rgba(0,0,0,0.2)' }}>
                         <div style={{ color: isSelected ? 'var(--app-accent)' : '#e2e8f0', fontWeight: 'bold', fontSize: '12px', fontFamily: 'monospace', marginBottom: '4px' }}>🚚 {code}</div>
