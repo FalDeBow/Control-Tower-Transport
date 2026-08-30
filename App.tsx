@@ -489,6 +489,16 @@ export default function App() {
   return (
     <>
       <style>{`
+        /* Global Full Width Reset untuk Memastikan Tidak Ada Batasan Kosong di Kanan */
+        html, body, #root {
+          width: 100% !important;
+          max-width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          box-sizing: border-box !important;
+          overflow-x: hidden !important;
+        }
+
         .ambient-bg {
           position: fixed; inset: 0; z-index: -1;
           background: radial-gradient(circle at 15% 30%, rgba(14, 165, 233, 0.15) 0%, transparent 40%),
@@ -498,10 +508,11 @@ export default function App() {
         .kpi-card { background: rgba(17, 24, 39, 0.6) !important; backdrop-filter: blur(12px) !important; border: 1px solid rgba(255,255,255,0.04); }
         .selected-week { background: rgba(14, 165, 233, 0.3) !important; color: #fff !important; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.5); }
         
-        /* Kontainer dashboard diperlebar 100% tanpa batas max-width kaku agar full mengisi layar luas */
+        /* Kontainer dashboard diperlebar 100% */
         .dashboard-container {
           width: 100% !important;
-          max-width: none !important;
+          max-width: 100% !important;
+          box-sizing: border-box !important;
         }
 
         /* Sidebar & Layout Utama Fluid */
@@ -512,8 +523,15 @@ export default function App() {
             border-right: 1px solid rgba(255,255,255,0.05);
             display: flex; flex-direction: column; align-items: center; padding-top: 20px;
           }
-          /* Konten menempel langsung di sebelah sidebar (64px + 12px padding kiri) */
-          .main-content { margin-left: 0 !important; padding: 16px 20px 16px 76px !important; transition: padding 0.3s; width: 100%; box-sizing: border-box; }
+          /* Memaksa konten mengisi penuh dari sisa ruang sidebar ke ujung kanan browser (padding kanan 20px) */
+          .main-content {
+            margin-left: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            padding: 16px 20px 16px 84px !important;
+            transition: padding 0.3s;
+          }
           .nav-item-icon { 
             display: flex; justify-content: center; align-items: center; width: 40px; height: 40px; 
             border-radius: 10px; margin: 8px 0; color: #cbd5e1; cursor: pointer; transition: all 0.2s; position: relative;
@@ -574,7 +592,7 @@ export default function App() {
           gap: 16px;
           margin-bottom: 20px;
           align-items: stretch;
-          width: 100%;
+          width: 100% !important;
         }
         .kpi-grid-3x2 {
           display: grid;
@@ -589,12 +607,14 @@ export default function App() {
           grid-template-columns: repeat(2, 1fr);
           gap: 16px;
           margin-bottom: 20px;
+          width: 100% !important;
         }
         .top10-grid-overview {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
           gap: 16px;
           margin-bottom: 20px;
+          width: 100% !important;
         }
 
         @media (max-width: 1024px) {
