@@ -75,7 +75,7 @@ const RouteAccordion = ({ rute, badgeClass }: any) => {
       <div className="accordion-header" onClick={() => setIsOpen(!isOpen)}>
         <span className="accordion-title" style={{ color: '#38bdf8', fontFamily: 'monospace', fontSize: '14px', letterSpacing: '1px' }}>{rute.code}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '11px', color: '#cbd5e1' }}>Load: <strong style={{ color: '#38bdf8' }}>{rute.load} Pkt ({rute.netLoadPct}%)</strong></span>
+          <span style={{ fontSize: '11px', color: '#cbd5e1' }}>Peak: <strong style={{ color: rute.netLoadPeakPct > 100 ? '#f87171' : '#38bdf8' }}>{rute.peakLoad} Pkt ({rute.netLoadPeakPct}%)</strong></span>
           <span className={`badge ${badgeClass}`}>{rute.status}</span>
           <span style={{ fontSize: '10px', color: '#94a3b8' }}>{isOpen ? '▲' : '▼'}</span>
         </div>
@@ -92,12 +92,12 @@ const RouteAccordion = ({ rute, badgeClass }: any) => {
               <strong style={{ color: '#f8fafc' }}>{rute.puDrop}</strong>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
-              <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>Net Load %</span>
-              <strong style={{ color: '#38bdf8' }}>{rute.netLoadPct}%</strong>
+              <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>Peak Load (Box)</span>
+              <strong style={{ color: rute.netLoadPeakPct > 100 ? '#f87171' : '#38bdf8' }}>{rute.peakLoad} Pkt ({rute.netLoadPeakPct}%)</strong>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
-              <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>SLA On-Time</span>
-              <strong style={{ color: '#34d399' }}>{rute.sla}</strong>
+              <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>Total Workload</span>
+              <strong style={{ color: '#fbbf24' }}>{rute.totalWorkload} Pkt ({rute.netLoadTotalPct}%)</strong>
             </div>
           </div>
         </div>
@@ -128,8 +128,8 @@ const CrewAccordion = ({ crew }: any) => {
               <strong style={{ color: '#38bdf8' }}>{crew.tripCount}</strong>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>Total Load</span>
-              <strong style={{ color: '#f8fafc' }}>{crew.totalLoad} Pkt</strong>
+              <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>Total Workload</span>
+              <strong style={{ color: '#f8fafc' }}>{crew.totalWorkload} Pkt</strong>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
               <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>SLA On-Time</span>
@@ -184,7 +184,7 @@ export default function App() {
   const [rawGasData, setRawGasData] = useState<any[]>([]);
   
   const [dashboardData, setDashboardData] = useState<any>({
-    kpi: { tripCount: 0, totalPurePU: 0, totalPureDrop: 0, totalWorkloadEffort: 0, overallSlaPct: 0, overallLoadPct: 0 },
+    kpi: { tripCount: 0, totalPurePU: 0, totalPureDrop: 0, totalWorkloadEffort: 0, overallSlaPct: 0, overallPeakLoadPct: 0, overallWorkloadPct: 0 },
     routeRows: [],
     crewRows: [],
     pointRows: [],
@@ -221,22 +221,19 @@ export default function App() {
     const fetchRawData = async () => {
       const CACHE_KEY = "transport_glass_raw_cache";
       
-      // Step A: Cek apakah ada data lokal tersimpan
       const localData = localStorage.getItem(CACHE_KEY);
       if (localData) {
         try {
           const parsedCache = JSON.parse(localData);
-          setRawGasData(parsedCache); // Langsung tampilkan data instan tanpa loading screen
+          setRawGasData(parsedCache); 
           setIsLoading(false);
         } catch (e) {
           console.error("Cache parse error", e);
         }
       } else {
-        // Jika belum ada cache (pertama kali buka), aktifkan loader
         setIsLoading(true);
       }
 
-      // Step B: Tarik data terbaru dari Google Apps Script secara asynchronous
       try {
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwUC07JIZ7ASWJhy4VyeHqXPnDQd2IPhmCraXOz9xg2Lti4dz9TxvlrNRS-Je7_7fsW/exec";
         const response = await fetch(GAS_API_URL);
@@ -256,7 +253,7 @@ export default function App() {
     fetchRawData();
   }, []);
 
-  // 2. OLAH DATA DENGAN EKUIVALENSI ARMADA DINAMIS (BLINDVAN, CDE, CDE-L, CDD, CDD-L) & MB/BP
+  // 2. FORMULASI LOGISTIK OPERASIONAL MURNI (UNCAPPED & COMPLETE AGGREGATION)
   useEffect(() => {
     if (!rawGasData || rawGasData.length === 0) return;
 
@@ -309,7 +306,6 @@ export default function App() {
       const isPickUp = kategori.includes('pickup') || kategori.includes('pick');
       const isDrop = kategori.includes('ss') || kategori.includes('drop');
       
-      // Ekstraksi nilai PU, Drop, MB, dan BP
       const puVal = Number(d['Jumlah PU']) || 0;
       const dropVal = Number(d['Jumlah Drop']) || Number(d['Jumlah SS']) || 0;
       const genVal = Number(d['Jumlah']) || Number(d['Jumlah Paket']) || 0;
@@ -320,7 +316,6 @@ export default function App() {
       let paketDrop = isDrop ? (dropVal || genVal) : 0;
       if (!isPickUp && !isDrop) { paketPU = puVal; paketDrop = dropVal; }
 
-      // Total beban per titik (Parcel + MB + BP)
       const totalPointLoad = paketPU + paketDrop + mbVal + bpVal;
 
       totalPurePU += paketPU;
@@ -397,60 +392,81 @@ export default function App() {
     const totalWorkloadEffort = filtered.length;
     const overallSlaPct = totalWorkloadEffort > 0 ? Math.round((onTimeCount / totalWorkloadEffort) * 100) : 0;
     
-    // Total Akumulasi Kapasitas Berdasarkan Tipe Unit Masing-Masing Trip
-    const totalAccumulatedLoad = totalPurePU + totalPureDrop + totalMB + totalBP;
+    // --- AKUMULASI KHUSUS OPERASIONAL MURNI ---
     const totalTargetCapacityAllTrips = Object.values(processedTripCapacities).reduce((a, b) => a + b, 0);
-    const overallLoadPct = totalTargetCapacityAllTrips > 0 
-      ? Math.min(100, Math.round((totalAccumulatedLoad / totalTargetCapacityAllTrips) * 100)) 
+    const totalWorkloadHandled = totalPurePU + totalPureDrop + totalMB + totalBP;
+
+    // Daily Overall Peak Load % (Kapasitas Maksimal Ruang) & Workload Effort % (Uncapped)
+    let totalPeakVolumeAllRoutes = 0;
+    Object.keys(routeMap).forEach(rKey => {
+      const r = routeMap[rKey];
+      totalPeakVolumeAllRoutes += Math.max(r.pu, r.drop) + r.mb + r.bp;
+    });
+
+    const overallPeakLoadPct = totalTargetCapacityAllTrips > 0 
+      ? Math.round((totalPeakVolumeAllRoutes / totalTargetCapacityAllTrips) * 100) 
       : 0;
 
+    const overallWorkloadPct = totalTargetCapacityAllTrips > 0 
+      ? Math.round((totalWorkloadHandled / totalTargetCapacityAllTrips) * 100) 
+      : 0;
+
+    // --- ROW RUTE DENGAN NILAI UNCAPPED & STATUS OVERLOAD ---
     const routeRows = Object.keys(routeMap).map(rute => {
        const r = routeMap[rute];
        const sla = r.points > 0 ? Math.round((r.onTime / r.points) * 100) : 0;
        const avgDelay = r.delayCount > 0 ? Math.round(r.totalDelay / r.delayCount) : 0;
        
-       // Total Load Rute termasuk MB & BP
-       const routeTotalLoad = r.pu + r.drop + r.mb + r.bp;
+       const peakLoad = Math.max(r.pu, r.drop) + r.mb + r.bp;
+       const totalWorkload = r.pu + r.drop + r.mb + r.bp;
        
-       // Target Kapasitas Rute Berdasarkan Tipe Unit per Trip yang Dijalankan
        let routeTargetCapacity = 0;
        r.trips.forEach((capBenchmark: number) => {
          routeTargetCapacity += capBenchmark;
        });
 
-       const netLoadPct = routeTargetCapacity > 0 
-         ? Math.min(100, Math.round((routeTotalLoad / routeTargetCapacity) * 100)) 
-         : 0;
+       // MURNI DITAMPILKAN APA ADANYA (TIDAK DILIMIT KE 100%)
+       const netLoadPeakPct = routeTargetCapacity > 0 ? Math.round((peakLoad / routeTargetCapacity) * 100) : 0;
+       const netLoadTotalPct = routeTargetCapacity > 0 ? Math.round((totalWorkload / routeTargetCapacity) * 100) : 0;
 
        let status = 'OPTIMAL';
-       if (sla < 80) status = 'CRITICAL';
+       if (netLoadPeakPct > 100) status = 'OVERLOAD'; // STATUS DARURAT UNTUK CONTROL TOWER
+       else if (sla < 80) status = 'CRITICAL';
        else if (sla < 95) status = 'WARNING';
 
        return {
-          code: rute, points: r.points, puDrop: `${r.pu} / ${r.drop}`, sla: `${sla}%`,
-          avgDelay: avgDelay > 0 ? `+${avgDelay}m` : '0m', load: routeTotalLoad, netLoadPct: netLoadPct, status: status,
+          code: rute, 
+          points: r.points, 
+          puDrop: `${r.pu} / ${r.drop}`, 
+          sla: `${sla}%`,
+          avgDelay: avgDelay > 0 ? `+${avgDelay}m` : '0m', 
+          peakLoad,
+          totalWorkload,
+          netLoadPeakPct, 
+          netLoadTotalPct,
+          status,
           assignedCrew: Array.from(r.drivers).join(', ')
        };
-    }).sort((a,b) => b.load - a.load);
+    }).sort((a,b) => b.peakLoad - a.peakLoad);
 
     const crewRows = Object.keys(crewMap).map(key => {
         const c = crewMap[key];
-        const totalLoad = c.totalPU + c.totalDrop + c.totalMB + c.totalBP;
+        const totalWorkload = c.totalPU + c.totalDrop + c.totalMB + c.totalBP;
         const slaVal = c.totalPoints > 0 ? Math.round((c.onTimePoints / c.totalPoints) * 100) : 0;
         
         let grade = 'D (Underperform)';
         let badgeColor = 'badge-critical';
         
-        if (slaVal >= 95 && totalLoad > 200) { grade = 'A (Excellent)'; badgeColor = 'badge-optimal'; }
+        if (slaVal >= 95 && totalWorkload > 200) { grade = 'A (Excellent)'; badgeColor = 'badge-optimal'; }
         else if (slaVal >= 85) { grade = 'B (Good)'; badgeColor = 'badge-warning'; }
         else if (slaVal >= 70) { grade = 'C (Average)'; badgeColor = 'badge-warning'; }
 
         return {
             driver: c.driver, helper: c.helper, tripCount: c.trips.size,
             points: c.totalPoints, loadPU: c.totalPU, loadDrop: c.totalDrop,
-            totalLoad: totalLoad, sla: `${slaVal}%`, grade: grade, badgeColor: badgeColor
+            totalWorkload, sla: `${slaVal}%`, grade, badgeColor
         };
-    }).sort((a,b) => b.totalLoad - a.totalLoad);
+    }).sort((a,b) => b.totalWorkload - a.totalWorkload);
 
     const topPickupPoints = Object.keys(pickupMap)
       .map(k => ({ name: k, load: pickupMap[k] }))
@@ -461,7 +477,7 @@ export default function App() {
        const uData = unitCapacityMap[uType];
        const trips = uData.tripCount.size;
        const avgPerTrip = trips > 0 ? Math.round(uData.totalLoad / trips) : 0;
-       const efficiency = Math.min(100, Math.round((avgPerTrip / uData.benchmark) * 100));
+       const efficiency = Math.round((avgPerTrip / uData.benchmark) * 100); // Uncapped efficiency
        return { 
          type: uType, trips, totalLoad: uData.totalLoad, 
          avgPerTrip, efficiency, routesCount: uData.routes.size,
@@ -471,12 +487,20 @@ export default function App() {
 
     const chartData = {
        labels: routeRows.map(r => r.code),
-       workloads: routeRows.map(r => r.load),
+       workloads: routeRows.map(r => r.peakLoad),
        slas: routeRows.map(r => parseInt(r.sla.replace('%', '')))
     };
 
     setDashboardData({
-       kpi: { tripCount, totalPurePU, totalPureDrop, totalWorkloadEffort, overallSlaPct, overallLoadPct },
+       kpi: { 
+         tripCount, 
+         totalPurePU, 
+         totalPureDrop, 
+         totalWorkloadEffort, 
+         overallSlaPct, 
+         overallPeakLoadPct,
+         overallWorkloadPct 
+       },
        routeRows,
        crewRows,
        pointRows,
@@ -504,7 +528,13 @@ export default function App() {
     return matchSearch && r.status.toLowerCase() === geoStatusFilter.toLowerCase();
   }).map((r: any) => r.code);
 
-  const getBadgeClass = (s: string) => !s ? 'badge-optimal' : s.includes('WARNING') ? 'badge-warning' : s.includes('CRITICAL') ? 'badge-critical' : 'badge-optimal';
+  const getBadgeClass = (s: string) => {
+    if (!s) return 'badge-optimal';
+    if (s.includes('OVERLOAD')) return 'badge-critical'; // Red Alert
+    if (s.includes('CRITICAL')) return 'badge-critical';
+    if (s.includes('WARNING')) return 'badge-warning';
+    return 'badge-optimal';
+  };
 
   const glassDoughnutData = {
     labels: dashboardData.chartData.labels,
@@ -541,7 +571,6 @@ export default function App() {
     plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', titleColor: '#38bdf8', bodyColor: '#f8fafc', borderColor: 'rgba(56, 189, 248, 0.3)', borderWidth: 1, padding: 12, cornerRadius: 8 } }
   };
 
-  // --- KALENDER DINAMIS ---
   const changeMonth = (offset: number) => {
     setCalendarViewDate(prev => {
       const nextDate = new Date(prev);
@@ -854,7 +883,13 @@ export default function App() {
                 <div className="kpi-card"><div className="title">Parcel Drop</div><div className="value" style={{ color: '#10b981' }}>{dashboardData.kpi.totalPureDrop}</div><div className="subtext">Penurunan (Pkt)</div></div>
                 <div className="kpi-card"><div className="title">Total Workload</div><div className="value">{dashboardData.kpi.totalWorkloadEffort}</div><div className="subtext">Points Visit</div></div>
                 <div className="kpi-card"><div className="title">SLA On-Time</div><div className="value">{dashboardData.kpi.overallSlaPct}%</div><div className="subtext">Aman (No Delay)</div></div>
-                <div className="kpi-card"><div className="title">Load Factor %</div><div className="value" style={{ color: '#38bdf8' }}>{dashboardData.kpi.overallLoadPct}%</div><div className="subtext">Utilitas Fleet Dynamic</div></div>
+                <div className="kpi-card">
+                  <div className="title">Peak Load Factor %</div>
+                  <div className="value" style={{ color: dashboardData.kpi.overallPeakLoadPct > 100 ? '#f87171' : '#38bdf8' }}>
+                    {dashboardData.kpi.overallPeakLoadPct}%
+                  </div>
+                  <div className="subtext">Okupansi Ruang Armada</div>
+                </div>
              </div>
 
           </div>
@@ -864,7 +899,7 @@ export default function App() {
               {/* BARIS 2: DIAGRAM PIE & BALOK */}
               <div className="charts-grid-overview">
                 <div className="card-panel" style={{ padding: '20px' }}>
-                  <div className="panel-header" style={{ marginBottom: '12px' }}><h3>🍰 Distribusi Workload Rute</h3></div>
+                  <div className="panel-header" style={{ marginBottom: '12px' }}><h3>🍰 Distribusi Peak Load Rute</h3></div>
                   {dashboardData.chartData.labels.length > 0 ? (
                     <div style={{ position: 'relative', width: '100%', height: '240px' }}>
                       <Doughnut data={glassDoughnutData} options={glassDoughnutOptions} />
@@ -888,7 +923,7 @@ export default function App() {
                 <div className="card-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px' }}>
                     <Icons.Routes />
-                    <h3 style={{ color: '#f8fafc', fontSize: '13px', margin: 0 }}>Top 10 Rute</h3>
+                    <h3 style={{ color: '#f8fafc', fontSize: '13px', margin: 0 }}>Top 10 Peak Load Rute</h3>
                   </div>
                   <div style={{ height: '240px', overflowY: 'auto' }} className="custom-scroll">
                     {dashboardData.routeRows.slice(0, 10).map((r: any, idx: number) => (
@@ -897,7 +932,7 @@ export default function App() {
                           <span className="lb-rank">{getRankMedal(idx)}</span>
                           <span className="lb-name" style={{ fontFamily: 'monospace' }}>{r.code}</span>
                         </div>
-                        <span className="lb-val">{r.load} Pkt</span>
+                        <span className="lb-val" style={{ color: r.netLoadPeakPct > 100 ? '#f87171' : '#38bdf8' }}>{r.peakLoad} Pkt ({r.netLoadPeakPct}%)</span>
                       </div>
                     ))}
                     {dashboardData.routeRows.length === 0 && <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Belum ada data rute.</p>}
@@ -926,7 +961,7 @@ export default function App() {
                 <div className="card-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px' }}>
                     <Icons.Crew />
-                    <h3 style={{ color: '#f8fafc', fontSize: '13px', margin: 0 }}>Top 10 Crew</h3>
+                    <h3 style={{ color: '#f8fafc', fontSize: '13px', margin: 0 }}>Top 10 Crew Workload</h3>
                   </div>
                   <div style={{ height: '240px', overflowY: 'auto' }} className="custom-scroll">
                     {dashboardData.crewRows.slice(0, 10).map((c: any, idx: number) => (
@@ -938,7 +973,7 @@ export default function App() {
                             <span style={{ fontSize: '9px', color: '#64748b', lineHeight: '1.2' }}>{c.helper}</span>
                           </div>
                         </div>
-                        <span className="lb-val" style={{ color: '#fbbf24' }}>{c.totalLoad} Pkt</span>
+                        <span className="lb-val" style={{ color: '#fbbf24' }}>{c.totalWorkload} Pkt</span>
                       </div>
                     ))}
                     {dashboardData.crewRows.length === 0 && <p style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Belum ada data kru.</p>}
@@ -952,14 +987,23 @@ export default function App() {
           {activeMenu === 'routes' && (
             <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
               <div className="panel-header" style={{ padding: '20px 20px 0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3>Route SLA & Net Load Performance</h3>
+                <h3>Route SLA & Load Matrix (Real Operational)</h3>
                 <span style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', background: 'rgba(14, 165, 233, 0.15)', color: '#38bdf8' }}>{filteredRoutes.length} Rute Dipantau</span>
               </div>
               
               <div style={{ overflowX: 'auto', padding: '0 20px 20px 20px' }}>
-                <table className="desktop-table-view" style={{ width: '100%', minWidth: '750px', borderCollapse: 'collapse' }}>
+                <table className="desktop-table-view" style={{ width: '100%', minWidth: '850px', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr><th>RUTE</th><th>POINT</th><th>PU / DROP</th><th>SLA %</th><th>AVG DELAY</th><th>TOTAL LOAD (PKT)</th><th>NET LOAD %</th><th>STATUS</th></tr>
+                    <tr>
+                      <th>RUTE</th>
+                      <th>STOP</th>
+                      <th>PU / DROP</th>
+                      <th>SLA %</th>
+                      <th>AVG DELAY</th>
+                      <th>PEAK LOAD (BOX)</th>
+                      <th>TOTAL WORKLOAD</th>
+                      <th>STATUS</th>
+                    </tr>
                   </thead>
                   <tbody>
                     {filteredRoutes.map((r: any, i: number) => (
@@ -969,8 +1013,18 @@ export default function App() {
                         <td>{r.puDrop}</td>
                         <td>{r.sla}</td>
                         <td style={{ color: '#f87171' }}>{r.avgDelay}</td>
-                        <td style={{ color: '#f8fafc', fontWeight: 'bold' }}>{r.load} Pkt</td>
-                        <td style={{ color: '#38bdf8', fontWeight: 'bold' }}>{r.netLoadPct}%</td>
+                        <td>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <strong style={{ color: r.netLoadPeakPct > 100 ? '#f87171' : '#38bdf8' }}>{r.peakLoad} Pkt</strong>
+                            <span style={{ fontSize: '10px', color: r.netLoadPeakPct > 100 ? '#f87171' : '#94a3b8' }}>{r.netLoadPeakPct}% Capacity</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <strong style={{ color: '#f8fafc' }}>{r.totalWorkload} Pkt</strong>
+                            <span style={{ fontSize: '10px', color: '#64748b' }}>{r.netLoadTotalPct}% Effort</span>
+                          </div>
+                        </td>
                         <td><span className={`badge ${getBadgeClass(r.status)}`}>{r.status}</span></td>
                       </tr>
                     ))}
@@ -1036,7 +1090,7 @@ export default function App() {
                       <th>SATMOB (DRIVER)</th>
                       <th>ASMOB (HELPER)</th>
                       <th>TRIP / POINT</th>
-                      <th>LOAD (PU / DROP)</th>
+                      <th>WORKLOAD (PU / DROP)</th>
                       <th>SLA %</th>
                       <th>GRADE</th>
                     </tr>
@@ -1054,7 +1108,7 @@ export default function App() {
                         </td>
                         <td>
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ color: '#fff', fontWeight: 'bold' }}>Total: {c.totalLoad} Pkt</span>
+                            <span style={{ color: '#fff', fontWeight: 'bold' }}>Total: {c.totalWorkload} Pkt</span>
                             <span style={{ fontSize: '10px', color: '#94a3b8' }}>PU: {c.loadPU} | Drop: {c.loadDrop}</span>
                           </div>
                         </td>
@@ -1095,12 +1149,14 @@ export default function App() {
                   <div key={idx} style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                       <span style={{ fontWeight: 'bold', color: '#f8fafc', fontSize: '14px' }}>🚐 {u.type}</span>
-                      <span className={`badge ${u.efficiency >= 80 ? 'badge-optimal' : 'badge-warning'}`}>{u.efficiency}% Efisiensi</span>
+                      <span className={`badge ${u.efficiency > 100 ? 'badge-critical' : u.efficiency >= 80 ? 'badge-optimal' : 'badge-warning'}`}>
+                        {u.efficiency}% Efficiency
+                      </span>
                     </div>
                     
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', color: '#94a3b8', marginBottom: '14px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Total Trip Tugas:</span> <strong style={{ color: '#fff' }}>{u.trips} Trip</strong></div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Akumulasi Muatan:</span> <strong style={{ color: '#38bdf8' }}>{u.totalLoad} Paket</strong></div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Akumulasi Workload:</span> <strong style={{ color: '#38bdf8' }}>{u.totalLoad} Paket</strong></div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Rata-rata per Trip:</span> <strong style={{ color: '#fbbf24' }}>{u.avgPerTrip} Pkt/Trip</strong></div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Standard Capacity:</span> <strong style={{ color: '#cbd5e1' }}>{u.benchmark} Pkt/Trip</strong></div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Cakupan Rute:</span> <strong style={{ color: '#34d399' }}>{u.routesCount} Rute Unik</strong></div>
@@ -1123,7 +1179,7 @@ export default function App() {
                   <button className={`mode-btn ${geoStatusFilter === 'all' ? 'active' : ''}`} onClick={() => setGeoStatusFilter('all')} style={{ padding: '6px 10px', fontSize: '10px' }}>Semua</button>
                   <button className={`mode-btn ${geoStatusFilter === 'optimal' ? 'active' : ''}`} onClick={() => setGeoStatusFilter('optimal')} style={{ padding: '6px 10px', fontSize: '10px' }}>Optimal</button>
                   <button className={`mode-btn ${geoStatusFilter === 'warning' ? 'active' : ''}`} onClick={() => setGeoStatusFilter('warning')} style={{ padding: '6px 10px', fontSize: '10px' }}>Warning</button>
-                  <button className={`mode-btn ${geoStatusFilter === 'critical' ? 'active' : ''}`} onClick={() => setGeoStatusFilter('critical')} style={{ padding: '6px 10px', fontSize: '10px' }}>Critical</button>
+                  <button className={`mode-btn ${geoStatusFilter === 'critical' ? 'active' : ''}`} onClick={() => setGeoStatusFilter('critical')} style={{ padding: '6px 10px', fontSize: '10px' }}>Critical / Overload</button>
                 </div>
               </div>
 
@@ -1142,7 +1198,7 @@ export default function App() {
                             <span className={`badge ${getBadgeClass(routeItem?.status)}`} style={{ fontSize: '9px', padding: '2px 6px' }}>{routeItem?.status || 'OPTIMAL'}</span>
                           </div>
                           <div style={{ fontSize: '10px', color: 'var(--app-muted)', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>Points: {routeItem?.points || '0'} | Load: {routeItem?.load || 0}</span>
+                            <span>Peak: {routeItem?.peakLoad || 0} Pkt ({routeItem?.netLoadPeakPct || 0}%)</span>
                             <span style={{ color: '#38bdf8' }}>{routeItem?.sla || '0%'} SLA</span>
                           </div>
                         </div>
