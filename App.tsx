@@ -43,16 +43,29 @@ const isDateInSameWeek = (targetDateStr: string, selectedDateStr: string) => {
   return targetDate >= start && targetDate <= end;
 };
 
-// --- HELPER PENENTU KAPASITAS ARMADA DINAMIS ---
-const getUnitCapacityBenchmark = (unitTypeStr: string): number => {
+// --- HELPER KAPASITAS ARMADA PRESISI (REGULER VS BULKY) ---
+const getUnitCapacityBenchmark = (unitTypeStr: string, isBulky: boolean = false): number => {
   const type = String(unitTypeStr || '').toUpperCase().trim();
+  
+  // KATEGORI BULKY: Muatan berupa karung/koli/bal besar (seperti Sunter/STR) Memiliki kuantitas koli yang lebih ramping dibanding paket eceran
+  if (isBulky) {
+    if (type.includes('CDD-L') || type.includes('CDD LONG') || type.includes('CDDL')) return 600;
+    if (type.includes('CDD')) return 500;
+    if (type.includes('CDE-L') || type.includes('CDE LONG') || type.includes('CDEL')) return 400; // CDE-L Bulky Standard = ~400 Karung/Koli
+    if (type.includes('CDE')) return 350;
+    if (type.includes('BLINDVAN') || type.includes('BLIND VAN') || type.includes('VAN') || type.includes('GRANMAX')) return 150;
+    if (type.includes('MOTOR') || type.includes('R2')) return 50;
+    return 300;
+  }
+
+  // KATEGORI REGULER: E-commerce small/medium parcel
   if (type.includes('CDD-L') || type.includes('CDD LONG') || type.includes('CDDL')) return 2000;
   if (type.includes('CDD')) return 1800;
   if (type.includes('CDE-L') || type.includes('CDE LONG') || type.includes('CDEL')) return 1300;
   if (type.includes('CDE')) return 1200;
   if (type.includes('BLINDVAN') || type.includes('BLIND VAN') || type.includes('VAN') || type.includes('GRANMAX')) return 600;
   if (type.includes('MOTOR') || type.includes('R2')) return 150;
-  return 600; 
+  return 600;
 };
 
 // --- ICON SVG ---
@@ -67,7 +80,7 @@ const Icons = {
   Search: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'18px', height:'18px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>,
 };
 
-// --- KOMPONEN ACCORDION ---
+// --- ACCORDION RESPONSIVE MOBILE ---
 const RouteAccordion = ({ rute, badgeClass }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
@@ -96,7 +109,7 @@ const RouteAccordion = ({ rute, badgeClass }: any) => {
               <strong style={{ color: '#fbbf24' }}>{rute.mb} MB / {rute.bp} BP</strong>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
-              <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>Discrepancy Audit</span>
+              <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>Audit Selisih</span>
               <strong style={{ color: rute.discrepancy !== 0 ? '#f87171' : '#10b981' }}>
                 {rute.discrepancy === 0 ? 'Match (0)' : `Selisih: ${rute.discrepancy}`}
               </strong>
@@ -259,7 +272,7 @@ export default function App() {
     fetchRawData();
   }, []);
 
-  // 2. EKSTRAKSI INDEPENDEN & DISCREPANCY AUDIT
+  // 2. FORMULASI DENGAN AUDIT BULKY, INDEPENDEN PER BARIS, DAN AUDIT SELISIH
   useEffect(() => {
     if (!rawGasData || rawGasData.length === 0) return;
 
@@ -297,8 +310,13 @@ export default function App() {
       const rute = String(d['Kode Rute'] || 'UNASSIGNED').trim();
       const driver = String(d['Satmob/Driver'] || 'Driver Unassigned').trim();
       const helper = String(d['Asmob/Helper'] || 'Helper Unassigned').trim();
-      const unitType = String(d['Tipe Unit'] || 'Blindvan').trim();
-      const unitBenchmark = getUnitCapacityBenchmark(unitType);
+      const unitType = String(d['Tipe Unit'] || 'CDE-L').trim();
+      
+      // DETECTION STRATEGY UNTUK KATEGORI BULKY (Sunter, STR, Karung/Koli Besar)
+      const combinedInfo = (rute + ' ' + String(d['Keterangan'] || '') + ' ' + String(d['Pin Point'] || '')).toUpperCase();
+      const isBulkyTask = combinedInfo.includes('BULKY') || combinedInfo.includes('KARUNG') || combinedInfo.includes('SUNTER') || rute.startsWith('STR-');
+
+      const unitBenchmark = getUnitCapacityBenchmark(unitType, isBulkyTask);
       
       const pinPoint = String(d['Pin Point'] || 'Unknown').trim();
       const tgl = formatDateKey(d['Tanggal Ops'] || '');
@@ -312,12 +330,11 @@ export default function App() {
       const kategoriRaw = String(d['Kategori'] || '').toUpperCase().trim();
       const isDropKategori = kategoriRaw.includes('DROP') || kategoriRaw.includes('SS') || kategoriRaw.includes('HUB') || kategoriRaw.includes('DELIVERY');
 
-      // PERHITUNGAN MURNI INDEPENDEN PER BARIS
+      // PERHITUNGAN MURNI INDEPENDEN DENGAN HANYA MEMBACA NILAI TITIK STOP
       const qtyPerStop = Number(d['Jumlah PU']) || 0;
       const mbVal = Number(d['MB']) || 0;
       const bpVal = Number(d['BP']) || 0;
       
-      // Ambil nilai rujukan Grand Total dari GSheet untuk Audit Discrepancy
       const gsheetGrandTotalPU = Number(d['Grand Total PU']) || 0;
 
       let paketPU = 0;
@@ -438,7 +455,6 @@ export default function App() {
        const netLoadPeakPct = routeTargetCapacity > 0 ? Math.round((peakLoad / routeTargetCapacity) * 100) : 0;
        const netLoadTotalPct = routeTargetCapacity > 0 ? Math.round((totalWorkload / routeTargetCapacity) * 100) : 0;
 
-       // DISCREPANCY CHECK: Bandingkan total independen kode vs Grand Total GSheet (jika ada nilai rujukan)
        const discrepancy = r.gsheetRefTotal > 0 ? (totalWorkload - r.gsheetRefTotal) : 0;
        if (discrepancy !== 0) totalDiscrepancies++;
 
@@ -893,7 +909,7 @@ export default function App() {
                 </div>
              </div>
 
-             {/* 6 Kartu KPI Grid 3x2 (Termasuk Audit Discrepancy) */}
+             {/* 6 Kartu KPI Grid 3x2 */}
              <div className="kpi-grid-3x2">
                 <div className="kpi-card"><div className="title">Total Trip</div><div className="value">{dashboardData.kpi.tripCount}</div><div className="subtext">Unit Aktif</div></div>
                 <div className="kpi-card"><div className="title">PU</div><div className="value" style={{ color: '#0ea5e9' }}>{dashboardData.kpi.totalPurePU}</div><div className="subtext">Pengambilan (Pkt)</div></div>
@@ -1004,7 +1020,7 @@ export default function App() {
           {activeMenu === 'routes' && (
             <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
               <div className="panel-header" style={{ padding: '20px 20px 0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3>Route Performance Matrix (Independent Calculation & Audit)</h3>
+                <h3>Route Performance Matrix (Precise Volume & Audit)</h3>
                 <span style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', background: 'rgba(14, 165, 233, 0.15)', color: '#38bdf8' }}>{filteredRoutes.length} Rute Dipantau</span>
               </div>
               
