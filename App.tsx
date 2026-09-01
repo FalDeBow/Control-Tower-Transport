@@ -16,7 +16,6 @@ ChartJS.register(ArcElement, Tooltip, Legend, BarElement, CategoryScale, LinearS
 // --- HELPER FORMAT TANGGAL ---
 const formatDateKey = (val: any) => {
   if (!val) return '';
-  const str = String(val);
   const d = new Date(val);
   if (!isNaN(d.getTime())) {
     const y = d.getFullYear();
@@ -24,7 +23,7 @@ const formatDateKey = (val: any) => {
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
   }
-  return str.substring(0, 10);
+  return String(val).substring(0, 10);
 };
 
 const getWeekRange = (dateString: string) => {
@@ -44,7 +43,19 @@ const isDateInSameWeek = (targetDateStr: string, selectedDateStr: string) => {
   return targetDate >= start && targetDate <= end;
 };
 
-// --- ICON SVG (RANGKA/OUTLINE) ---
+// --- HELPER PENENTU KAPASITAS ARMADA DINAMIS ---
+const getUnitCapacityBenchmark = (unitTypeStr: string): number => {
+  const type = String(unitTypeStr || '').toUpperCase().trim();
+  if (type.includes('CDD-L') || type.includes('CDD LONG') || type.includes('CDDL')) return 2000;
+  if (type.includes('CDD')) return 1800;
+  if (type.includes('CDE-L') || type.includes('CDE LONG') || type.includes('CDEL')) return 1300;
+  if (type.includes('CDE')) return 1200;
+  if (type.includes('BLINDVAN') || type.includes('BLIND VAN') || type.includes('VAN') || type.includes('GRANMAX')) return 600;
+  if (type.includes('MOTOR') || type.includes('R2')) return 150;
+  return 600; // Default fallback jika tipe unit tidak teridentifikasi
+};
+
+// --- ICON SVG ---
 const Icons = {
   Menu: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'22px', height:'22px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>,
   Overview: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'20px', height:'20px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>,
@@ -64,7 +75,7 @@ const RouteAccordion = ({ rute, badgeClass }: any) => {
       <div className="accordion-header" onClick={() => setIsOpen(!isOpen)}>
         <span className="accordion-title" style={{ color: '#38bdf8', fontFamily: 'monospace', fontSize: '14px', letterSpacing: '1px' }}>{rute.code}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '11px', color: '#cbd5e1' }}>Load: <strong style={{ color: '#38bdf8' }}>{rute.load}</strong></span>
+          <span style={{ fontSize: '11px', color: '#cbd5e1' }}>Load: <strong style={{ color: '#38bdf8' }}>{rute.load} Pkt ({rute.netLoadPct}%)</strong></span>
           <span className={`badge ${badgeClass}`}>{rute.status}</span>
           <span style={{ fontSize: '10px', color: '#94a3b8' }}>{isOpen ? '▲' : '▼'}</span>
         </div>
@@ -81,12 +92,12 @@ const RouteAccordion = ({ rute, badgeClass }: any) => {
               <strong style={{ color: '#f8fafc' }}>{rute.puDrop}</strong>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
-              <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>SLA On-Time</span>
-              <strong style={{ color: '#34d399' }}>{rute.sla}</strong>
+              <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>Net Load %</span>
+              <strong style={{ color: '#38bdf8' }}>{rute.netLoadPct}%</strong>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
-              <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>Avg Delay</span>
-              <strong style={{ color: '#f87171' }}>{rute.avgDelay}</strong>
+              <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>SLA On-Time</span>
+              <strong style={{ color: '#34d399' }}>{rute.sla}</strong>
             </div>
           </div>
         </div>
@@ -190,7 +201,10 @@ export default function App() {
   const [geoStatusFilter, setGeoStatusFilter] = useState('all');
   
   const [mode, setMode] = useState('monthly'); 
-  const [selectedDate, setSelectedDate] = useState('2026-08-27');
+  const todayStr = new Date().toISOString().substring(0, 10);
+  const [selectedDate, setSelectedDate] = useState(todayStr);
+  const [calendarViewDate, setCalendarViewDate] = useState(new Date());
+  
   const [isSlideMenuOpen, setIsSlideMenuOpen] = useState(false); 
   const [selectedRouteCode, setSelectedRouteCode] = useState('');
 
@@ -202,10 +216,27 @@ export default function App() {
   const timeString = time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const dateString = time.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
-  // 1. FETCH RAW DATA
+  // 1. FETCH RAW DATA WITH LOCALSTORAGE CACHING & BACKGROUND SYNC
   useEffect(() => {
     const fetchRawData = async () => {
-      setIsLoading(true);
+      const CACHE_KEY = "transport_glass_raw_cache";
+      
+      // Step A: Cek apakah ada data lokal tersimpan
+      const localData = localStorage.getItem(CACHE_KEY);
+      if (localData) {
+        try {
+          const parsedCache = JSON.parse(localData);
+          setRawGasData(parsedCache); // Langsung tampilkan data instan tanpa loading screen
+          setIsLoading(false);
+        } catch (e) {
+          console.error("Cache parse error", e);
+        }
+      } else {
+        // Jika belum ada cache (pertama kali buka), aktifkan loader
+        setIsLoading(true);
+      }
+
+      // Step B: Tarik data terbaru dari Google Apps Script secara asynchronous
       try {
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwUC07JIZ7ASWJhy4VyeHqXPnDQd2IPhmCraXOz9xg2Lti4dz9TxvlrNRS-Je7_7fsW/exec";
         const response = await fetch(GAS_API_URL);
@@ -213,6 +244,7 @@ export default function App() {
         
         if (result.status === "success" && result.data) {
           setRawGasData(result.data);
+          localStorage.setItem(CACHE_KEY, JSON.stringify(result.data));
         }
       } catch (error) {
         console.error("Fetch error:", error);
@@ -220,27 +252,35 @@ export default function App() {
         setIsLoading(false);
       }
     };
+
     fetchRawData();
   }, []);
 
-  // 2. OLAH DATA
+  // 2. OLAH DATA DENGAN EKUIVALENSI ARMADA DINAMIS (BLINDVAN, CDE, CDE-L, CDD, CDD-L) & MB/BP
   useEffect(() => {
     if (!rawGasData || rawGasData.length === 0) return;
 
+    const currentYearStr = String(calendarViewDate.getFullYear());
+    const currentMonthStr = String(calendarViewDate.getMonth() + 1).padStart(2, '0');
+
     const filtered = rawGasData.filter((d: any) => {
         const rawTgl = formatDateKey(d['Tanggal Ops'] || '');
-        if (mode === 'monthly') return true; 
+        if (mode === 'monthly') {
+          return rawTgl.startsWith(`${currentYearStr}-${currentMonthStr}`);
+        }
         if (mode === 'daily') return rawTgl === selectedDate;
         if (mode === 'weekly') return isDateInSameWeek(rawTgl, selectedDate);
         return true;
     });
 
     let tripSet = new Set();
+    let processedTripCapacities: Record<string, number> = {};
+
     let totalPurePU = 0;
     let totalPureDrop = 0;
+    let totalMB = 0;
+    let totalBP = 0;
     let onTimeCount = 0;
-    let totalDelayMins = 0;
-    let delayCount = 0;
 
     let routeMap: any = {};
     let unitCapacityMap: any = {}; 
@@ -253,29 +293,49 @@ export default function App() {
       const rute = String(d['Kode Rute'] || 'UNASSIGNED').trim();
       const driver = String(d['Satmob/Driver'] || 'Driver Unassigned').trim();
       const helper = String(d['Asmob/Helper'] || 'Helper Unassigned').trim();
-      const unitType = String(d['Tipe Unit'] || 'Standard').trim();
+      const unitType = String(d['Tipe Unit'] || 'Blindvan').trim();
+      const unitBenchmark = getUnitCapacityBenchmark(unitType);
+      
       const pinPoint = String(d['Pin Point'] || 'Unknown').trim();
       const tgl = formatDateKey(d['Tanggal Ops'] || '');
       const dateRute = `${tgl}_${rute}_${driver}`;
       
       tripSet.add(dateRute);
+      if (!processedTripCapacities[dateRute]) {
+        processedTripCapacities[dateRute] = unitBenchmark;
+      }
 
       const kategori = String(d['Kategori'] || '').toLowerCase();
       const isPickUp = kategori.includes('pickup') || kategori.includes('pick');
       const isDrop = kategori.includes('ss') || kategori.includes('drop');
-      const paket = Number(d['Jumlah PU']) || 0;
       
-      if (isPickUp) totalPurePU += paket;
-      if (isDrop) totalPureDrop += paket;
+      // Ekstraksi nilai PU, Drop, MB, dan BP
+      const puVal = Number(d['Jumlah PU']) || 0;
+      const dropVal = Number(d['Jumlah Drop']) || Number(d['Jumlah SS']) || 0;
+      const genVal = Number(d['Jumlah']) || Number(d['Jumlah Paket']) || 0;
+      const mbVal = Number(d['MB']) || 0;
+      const bpVal = Number(d['BP']) || 0;
+      
+      let paketPU = isPickUp ? (puVal || genVal) : 0;
+      let paketDrop = isDrop ? (dropVal || genVal) : 0;
+      if (!isPickUp && !isDrop) { paketPU = puVal; paketDrop = dropVal; }
+
+      // Total beban per titik (Parcel + MB + BP)
+      const totalPointLoad = paketPU + paketDrop + mbVal + bpVal;
+
+      totalPurePU += paketPU;
+      totalPureDrop += paketDrop;
+      totalMB += mbVal;
+      totalBP += bpVal;
 
       if (isPickUp && pinPoint !== 'Unknown') {
-          pickupMap[pinPoint] = (pickupMap[pinPoint] || 0) + paket;
+        pickupMap[pinPoint] = (pickupMap[pinPoint] || 0) + totalPointLoad;
       }
 
       if (!unitCapacityMap[unitType]) {
-        unitCapacityMap[unitType] = { totalLoad: 0, tripCount: new Set(), routes: new Set() };
+        unitCapacityMap[unitType] = { totalLoad: 0, tripCount: new Set(), routes: new Set(), benchmark: unitBenchmark };
       }
-      unitCapacityMap[unitType].totalLoad += paket;
+      unitCapacityMap[unitType].totalLoad += totalPointLoad;
       unitCapacityMap[unitType].tripCount.add(dateRute);
       unitCapacityMap[unitType].routes.add(rute);
 
@@ -292,36 +352,43 @@ export default function App() {
       }
       
       if (delay <= 0) onTimeCount++;
-      if (delay > 0) {
-          totalDelayMins += delay;
-          delayCount++;
-      }
 
-      if (!routeMap[rute]) routeMap[rute] = { points: 0, pu: 0, drop: 0, onTime: 0, totalDelay: 0, delayCount: 0, drivers: new Set() };
+      if (!routeMap[rute]) {
+        routeMap[rute] = { 
+          points: 0, pu: 0, drop: 0, mb: 0, bp: 0, 
+          trips: new Map<string, number>(), onTime: 0, totalDelay: 0, delayCount: 0, drivers: new Set() 
+        };
+      }
       routeMap[rute].points++;
+      routeMap[rute].trips.set(dateRute, unitBenchmark);
       routeMap[rute].drivers.add(`${driver} & ${helper}`);
-      if (isPickUp) routeMap[rute].pu += paket;
-      if (isDrop) routeMap[rute].drop += paket;
+      routeMap[rute].pu += paketPU;
+      routeMap[rute].drop += paketDrop;
+      routeMap[rute].mb += mbVal;
+      routeMap[rute].bp += bpVal;
+      
       if (delay <= 0) routeMap[rute].onTime++;
       if (delay > 0) { routeMap[rute].totalDelay += delay; routeMap[rute].delayCount++; }
 
       const crewKey = `${driver} | ${helper}`;
       if (!crewMap[crewKey]) {
           crewMap[crewKey] = {
-              driver, helper, trips: new Set(), totalPoints: 0, totalPU: 0, totalDrop: 0, onTimePoints: 0
+              driver, helper, trips: new Set(), totalPoints: 0, totalPU: 0, totalDrop: 0, totalMB: 0, totalBP: 0, onTimePoints: 0
           };
       }
       crewMap[crewKey].trips.add(dateRute);
       crewMap[crewKey].totalPoints++;
-      if (isPickUp) crewMap[crewKey].totalPU += paket;
-      if (isDrop) crewMap[crewKey].totalDrop += paket;
+      crewMap[crewKey].totalPU += paketPU;
+      crewMap[crewKey].totalDrop += paketDrop;
+      crewMap[crewKey].totalMB += mbVal;
+      crewMap[crewKey].totalBP += bpVal;
       if (delay <= 0) crewMap[crewKey].onTimePoints++;
 
       pointRows.push({
          name: pinPoint,
          visit: ata,
-         puDrop: `${isPickUp ? paket : 0} / ${isDrop ? paket : 0}`,
-         mbBp: `${d['MB'] || 0} / ${d['BP'] || 0}`,
+         puDrop: `${paketPU} / ${paketDrop}`,
+         mbBp: `${mbVal} / ${bpVal}`,
          status: delay > 0 ? `LATE ${delay}m` : 'ON-TIME'
       });
     });
@@ -329,33 +396,52 @@ export default function App() {
     const tripCount = tripSet.size;
     const totalWorkloadEffort = filtered.length;
     const overallSlaPct = totalWorkloadEffort > 0 ? Math.round((onTimeCount / totalWorkloadEffort) * 100) : 0;
-    const overallLoadPct = tripCount > 0 ? Math.min(100, Math.round(((totalPurePU + totalPureDrop) / (tripCount * 150)) * 100)) : 0;
+    
+    // Total Akumulasi Kapasitas Berdasarkan Tipe Unit Masing-Masing Trip
+    const totalAccumulatedLoad = totalPurePU + totalPureDrop + totalMB + totalBP;
+    const totalTargetCapacityAllTrips = Object.values(processedTripCapacities).reduce((a, b) => a + b, 0);
+    const overallLoadPct = totalTargetCapacityAllTrips > 0 
+      ? Math.min(100, Math.round((totalAccumulatedLoad / totalTargetCapacityAllTrips) * 100)) 
+      : 0;
 
     const routeRows = Object.keys(routeMap).map(rute => {
        const r = routeMap[rute];
        const sla = r.points > 0 ? Math.round((r.onTime / r.points) * 100) : 0;
        const avgDelay = r.delayCount > 0 ? Math.round(r.totalDelay / r.delayCount) : 0;
-       const load = r.pu + r.drop;
+       
+       // Total Load Rute termasuk MB & BP
+       const routeTotalLoad = r.pu + r.drop + r.mb + r.bp;
+       
+       // Target Kapasitas Rute Berdasarkan Tipe Unit per Trip yang Dijalankan
+       let routeTargetCapacity = 0;
+       r.trips.forEach((capBenchmark: number) => {
+         routeTargetCapacity += capBenchmark;
+       });
+
+       const netLoadPct = routeTargetCapacity > 0 
+         ? Math.min(100, Math.round((routeTotalLoad / routeTargetCapacity) * 100)) 
+         : 0;
+
        let status = 'OPTIMAL';
        if (sla < 80) status = 'CRITICAL';
        else if (sla < 95) status = 'WARNING';
 
        return {
           code: rute, points: r.points, puDrop: `${r.pu} / ${r.drop}`, sla: `${sla}%`,
-          avgDelay: avgDelay > 0 ? `+${avgDelay}m` : '0m', load: load, status: status,
+          avgDelay: avgDelay > 0 ? `+${avgDelay}m` : '0m', load: routeTotalLoad, netLoadPct: netLoadPct, status: status,
           assignedCrew: Array.from(r.drivers).join(', ')
        };
     }).sort((a,b) => b.load - a.load);
 
     const crewRows = Object.keys(crewMap).map(key => {
         const c = crewMap[key];
-        const totalLoad = c.totalPU + c.totalDrop;
+        const totalLoad = c.totalPU + c.totalDrop + c.totalMB + c.totalBP;
         const slaVal = c.totalPoints > 0 ? Math.round((c.onTimePoints / c.totalPoints) * 100) : 0;
         
         let grade = 'D (Underperform)';
         let badgeColor = 'badge-critical';
         
-        if (slaVal >= 95 && totalLoad > 50) { grade = 'A (Excellent)'; badgeColor = 'badge-optimal'; }
+        if (slaVal >= 95 && totalLoad > 200) { grade = 'A (Excellent)'; badgeColor = 'badge-optimal'; }
         else if (slaVal >= 85) { grade = 'B (Good)'; badgeColor = 'badge-warning'; }
         else if (slaVal >= 70) { grade = 'C (Average)'; badgeColor = 'badge-warning'; }
 
@@ -375,10 +461,11 @@ export default function App() {
        const uData = unitCapacityMap[uType];
        const trips = uData.tripCount.size;
        const avgPerTrip = trips > 0 ? Math.round(uData.totalLoad / trips) : 0;
-       const efficiency = Math.min(100, Math.round((avgPerTrip / 150) * 100));
+       const efficiency = Math.min(100, Math.round((avgPerTrip / uData.benchmark) * 100));
        return { 
          type: uType, trips, totalLoad: uData.totalLoad, 
-         avgPerTrip, efficiency, routesCount: uData.routes.size 
+         avgPerTrip, efficiency, routesCount: uData.routes.size,
+         benchmark: uData.benchmark
        };
     });
 
@@ -402,7 +489,7 @@ export default function App() {
        setSelectedRouteCode(routeRows[0].code);
     }
 
-  }, [rawGasData, mode, selectedDate]);
+  }, [rawGasData, mode, selectedDate, calendarViewDate]);
 
   const filteredRoutes = dashboardData.routeRows.filter((r: any) => r.code.toLowerCase().includes(searchQuery.toLowerCase()));
   const filteredPoints = dashboardData.pointRows.filter((p: any) => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -411,7 +498,7 @@ export default function App() {
       c.helper.toLowerCase().includes(crewSearchQuery.toLowerCase())
   );
   
-  const validRouteCodes = dashboardData.routeRows.filter((r: any) => {
+  const filteredRouteCodes = dashboardData.routeRows.filter((r: any) => {
     const matchSearch = r.code.toLowerCase().includes(pinSearchQuery.toLowerCase());
     if (geoStatusFilter === 'all') return matchSearch;
     return matchSearch && r.status.toLowerCase() === geoStatusFilter.toLowerCase();
@@ -454,18 +541,36 @@ export default function App() {
     plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', titleColor: '#38bdf8', bodyColor: '#f8fafc', borderColor: 'rgba(56, 189, 248, 0.3)', borderWidth: 1, padding: 12, cornerRadius: 8 } }
   };
 
+  // --- KALENDER DINAMIS ---
+  const changeMonth = (offset: number) => {
+    setCalendarViewDate(prev => {
+      const nextDate = new Date(prev);
+      nextDate.setMonth(nextDate.getMonth() + offset);
+      return nextDate;
+    });
+  };
+
   const renderCalendarKompleks = () => {
-    const daysArr = [];
-    const emptyStart = 6; 
+    const year = calendarViewDate.getFullYear();
+    const month = calendarViewDate.getMonth();
     
-    for(let e = 0; e < emptyStart; e++) {
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    
+    const daysArr = [];
+    for (let e = 0; e < firstDayIndex; e++) {
       daysArr.push(<div key={`emp-${e}`} className="cal-day-compact empty"></div>);
     }
-    for (let d = 1; d <= 31; d++) {
-      let dateStr = `2026-08-${d < 10 ? '0' + d : d}`;
+    
+    const mStr = String(month + 1).padStart(2, '0');
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dStr = String(d).padStart(2, '0');
+      const dateStr = `${year}-${mStr}-${dStr}`;
+      
       let isSelectedWeek = mode === 'weekly' && isDateInSameWeek(dateStr, selectedDate);
       let isSelectedDay = mode === 'daily' && dateStr === selectedDate;
       const classNames = `cal-day-compact ${isSelectedDay ? 'selected' : ''} ${isSelectedWeek ? 'selected-week' : ''}`;
+      
       daysArr.push(
         <div key={d} className={classNames} onClick={() => { if(mode === 'monthly') setMode('daily'); setSelectedDate(dateStr); }}>
           {d}
@@ -480,7 +585,6 @@ export default function App() {
     setIsSlideMenuOpen(false);
   };
 
-  // Menggunakan OpenStreetMap Embed (Stabil, Bebas Blokir iframe, Tanpa Layar Biru)
   const renderMapsUrl = () => {
     return `https://www.openstreetmap.org/export/embed.html?bbox=106.75,-6.25,106.95,-6.10&layer=mapnik&marker=-6.1751,106.8272`;
   };
@@ -636,6 +740,8 @@ export default function App() {
         .lb-rank { margin-right: 10px; font-size: 13px; }
         .lb-name { flex: 1; font-size: 11px; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .lb-val { font-size: 11px; font-weight: bold; color: #38bdf8; margin-left: 8px; }
+        .cal-nav-btn { background: rgba(255,255,255,0.1); border: none; color: #fff; border-radius: 4px; cursor: pointer; padding: 2px 6px; font-size: 10px; }
+        .cal-nav-btn:hover { background: rgba(14, 165, 233, 0.4); }
       `}</style>
 
       <div className="ambient-bg"></div>
@@ -708,10 +814,10 @@ export default function App() {
 
         <div className="dashboard-container">
           
-          {/* BARIS 1: KALENDER KOMPAK DI KIRI & 6 KARTU KPI 3x2 DI KANAN */}
+          {/* BARIS 1: KALENDER DINAMIS DI KIRI & 6 KARTU KPI 3x2 DI KANAN */}
           <div className="row-1-grid">
              
-             {/* Kalender Kompak */}
+             {/* Kalender Kompak Dinamis */}
              <div className="card-panel" style={{ padding: '14px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px' }}>
                    <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--app-muted)' }}>PERIODE DATA & FILTER</span>
@@ -723,9 +829,15 @@ export default function App() {
                 </div>
 
                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '8px' }}>
-                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                     <span style={{ fontSize: '10px', color: '#e2e8f0', fontWeight: 'bold' }}>🗓️ Agustus 2026</span>
-                     <span style={{ fontSize: '9px', cursor: 'pointer', background: 'rgba(255,255,255,0.1)', padding: '2px 4px', borderRadius: '4px', color: '#94a3b8' }} onClick={() => setMode('monthly')}>Reset</span>
+                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                       <button className="cal-nav-btn" onClick={() => changeMonth(-1)}>◀</button>
+                       <span style={{ fontSize: '10px', color: '#e2e8f0', fontWeight: 'bold' }}>
+                         🗓️ {calendarViewDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+                       </span>
+                       <button className="cal-nav-btn" onClick={() => changeMonth(1)}>▶</button>
+                     </div>
+                     <span style={{ fontSize: '9px', cursor: 'pointer', background: 'rgba(255,255,255,0.1)', padding: '2px 4px', borderRadius: '4px', color: '#94a3b8' }} onClick={() => { setCalendarViewDate(new Date()); setSelectedDate(todayStr); setMode('monthly'); }}>Reset</span>
                    </div>
                    <div className="calendar-grid-compact">
                      <div className="cal-head">Min</div><div className="cal-head">Sen</div><div className="cal-head">Sel</div>
@@ -737,19 +849,19 @@ export default function App() {
 
              {/* 6 Kartu KPI Grid 3x2 */}
              <div className="kpi-grid-3x2">
-               <div className="kpi-card"><div className="title">Total Trip</div><div className="value">{dashboardData.kpi.tripCount}</div><div className="subtext">Unit Aktif</div></div>
-               <div className="kpi-card"><div className="title">Parcel PU</div><div className="value" style={{ color: '#0ea5e9' }}>{dashboardData.kpi.totalPurePU}</div><div className="subtext">Pengambilan (Pkt)</div></div>
-               <div className="kpi-card"><div className="title">Parcel Drop</div><div className="value" style={{ color: '#10b981' }}>{dashboardData.kpi.totalPureDrop}</div><div className="subtext">Penurunan (Pkt)</div></div>
-               <div className="kpi-card"><div className="title">Total Workload</div><div className="value">{dashboardData.kpi.totalWorkloadEffort}</div><div className="subtext">Points Visit</div></div>
-               <div className="kpi-card"><div className="title">SLA On-Time</div><div className="value">{dashboardData.kpi.overallSlaPct}%</div><div className="subtext">Aman (No Delay)</div></div>
-               <div className="kpi-card"><div className="title">Load Factor %</div><div className="value">{dashboardData.kpi.overallLoadPct}%</div><div className="subtext">Eq-PU Volume</div></div>
+                <div className="kpi-card"><div className="title">Total Trip</div><div className="value">{dashboardData.kpi.tripCount}</div><div className="subtext">Unit Aktif</div></div>
+                <div className="kpi-card"><div className="title">Parcel PU</div><div className="value" style={{ color: '#0ea5e9' }}>{dashboardData.kpi.totalPurePU}</div><div className="subtext">Pengambilan (Pkt)</div></div>
+                <div className="kpi-card"><div className="title">Parcel Drop</div><div className="value" style={{ color: '#10b981' }}>{dashboardData.kpi.totalPureDrop}</div><div className="subtext">Penurunan (Pkt)</div></div>
+                <div className="kpi-card"><div className="title">Total Workload</div><div className="value">{dashboardData.kpi.totalWorkloadEffort}</div><div className="subtext">Points Visit</div></div>
+                <div className="kpi-card"><div className="title">SLA On-Time</div><div className="value">{dashboardData.kpi.overallSlaPct}%</div><div className="subtext">Aman (No Delay)</div></div>
+                <div className="kpi-card"><div className="title">Load Factor %</div><div className="value" style={{ color: '#38bdf8' }}>{dashboardData.kpi.overallLoadPct}%</div><div className="subtext">Utilitas Fleet Dynamic</div></div>
              </div>
 
           </div>
 
           {activeMenu === 'overview' && (
             <>
-              {/* BARIS 2: DIAGRAM PIE & BALOK (Fluid Widescreen) */}
+              {/* BARIS 2: DIAGRAM PIE & BALOK */}
               <div className="charts-grid-overview">
                 <div className="card-panel" style={{ padding: '20px' }}>
                   <div className="panel-header" style={{ marginBottom: '12px' }}><h3>🍰 Distribusi Workload Rute</h3></div>
@@ -770,7 +882,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* BARIS 3: KETIGA TOP 10 OVERVIEW (Fluid Widescreen) */}
+              {/* BARIS 3: TOP 10 OVERVIEW */}
               <div className="top10-grid-overview">
                 
                 <div className="card-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column' }}>
@@ -840,25 +952,29 @@ export default function App() {
           {activeMenu === 'routes' && (
             <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
               <div className="panel-header" style={{ padding: '20px 20px 0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3>Route SLA Performance</h3>
+                <h3>Route SLA & Net Load Performance</h3>
                 <span style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', background: 'rgba(14, 165, 233, 0.15)', color: '#38bdf8' }}>{filteredRoutes.length} Rute Dipantau</span>
               </div>
               
               <div style={{ overflowX: 'auto', padding: '0 20px 20px 20px' }}>
-                <table className="desktop-table-view" style={{ width: '100%', minWidth: '700px', borderCollapse: 'collapse' }}>
+                <table className="desktop-table-view" style={{ width: '100%', minWidth: '750px', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr><th>RUTE</th><th>POINT</th><th>PU / DROP</th><th>SLA %</th><th>AVG DELAY</th><th>NET LOAD (PKT)</th><th>STATUS</th></tr>
+                    <tr><th>RUTE</th><th>POINT</th><th>PU / DROP</th><th>SLA %</th><th>AVG DELAY</th><th>TOTAL LOAD (PKT)</th><th>NET LOAD %</th><th>STATUS</th></tr>
                   </thead>
                   <tbody>
                     {filteredRoutes.map((r: any, i: number) => (
                       <tr key={i}>
                         <td style={{ color: '#38bdf8', fontWeight: 'bold', fontFamily: 'monospace' }}>{r.code}</td>
-                        <td>{r.points}</td><td>{r.puDrop}</td><td>{r.sla}</td><td style={{ color: '#f87171' }}>{r.avgDelay}</td>
-                        <td style={{ color: '#38bdf8', fontWeight: 'bold' }}>{r.load}</td>
+                        <td>{r.points}</td>
+                        <td>{r.puDrop}</td>
+                        <td>{r.sla}</td>
+                        <td style={{ color: '#f87171' }}>{r.avgDelay}</td>
+                        <td style={{ color: '#f8fafc', fontWeight: 'bold' }}>{r.load} Pkt</td>
+                        <td style={{ color: '#38bdf8', fontWeight: 'bold' }}>{r.netLoadPct}%</td>
                         <td><span className={`badge ${getBadgeClass(r.status)}`}>{r.status}</span></td>
                       </tr>
                     ))}
-                    {filteredRoutes.length === 0 && (<tr><td colSpan={7} style={{ textAlign: 'center', padding: '16px', color: 'var(--app-muted)' }}>Data rute tidak ditemukan</td></tr>)}
+                    {filteredRoutes.length === 0 && (<tr><td colSpan={8} style={{ textAlign: 'center', padding: '16px', color: 'var(--app-muted)' }}>Data rute tidak ditemukan</td></tr>)}
                   </tbody>
                 </table>
                 <div className="mobile-accordion-list">
@@ -986,6 +1102,7 @@ export default function App() {
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Total Trip Tugas:</span> <strong style={{ color: '#fff' }}>{u.trips} Trip</strong></div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Akumulasi Muatan:</span> <strong style={{ color: '#38bdf8' }}>{u.totalLoad} Paket</strong></div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Rata-rata per Trip:</span> <strong style={{ color: '#fbbf24' }}>{u.avgPerTrip} Pkt/Trip</strong></div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Standard Capacity:</span> <strong style={{ color: '#cbd5e1' }}>{u.benchmark} Pkt/Trip</strong></div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Cakupan Rute:</span> <strong style={{ color: '#34d399' }}>{u.routesCount} Rute Unik</strong></div>
                     </div>
                   </div>
