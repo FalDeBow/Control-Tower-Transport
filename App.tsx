@@ -47,10 +47,7 @@ const isDateInSameWeek = (targetDateStr: string, selectedDateStr: string) => {
 const getUnitCapacityBenchmark = (unitTypeStr: string, isBulky: boolean = false): number => {
   const type = String(unitTypeStr || '').toUpperCase().trim();
   
-  // KATEGORI BULKY: Satuan TETAP Pcs/Paket, bukan Koli.
-  // Karena paket dikonsolidasi padat ke dalam karung, jumlah Pcs/Paket yang bisa masuk
-  // jauh lebih besar (tingkat densitas sangat tinggi) dibanding paket reguler.
-  // Hasil kalibrasi: 1125 Pcs = 45% Box CDE-L => 100% CDE-L Bulky = ~2500 Pcs.
+  // KATEGORI BULKY: Satuan Pcs/Paket (Hasil kalibrasi 1125 Pcs = 45% Box CDE-L => 100% CDE-L Bulky = ~2500 Pcs)
   if (isBulky) {
     if (type.includes('CDD-L') || type.includes('CDD LONG') || type.includes('CDDL')) return 4000;
     if (type.includes('CDD')) return 3500;
@@ -61,7 +58,7 @@ const getUnitCapacityBenchmark = (unitTypeStr: string, isBulky: boolean = false)
     return 1500;
   }
 
-  // KATEGORI REGULER: E-commerce loose cargo / paket berceceran (dead-space tinggi)
+  // KATEGORI REGULER: E-commerce loose cargo / paket berceceran
   if (type.includes('CDD-L') || type.includes('CDD LONG') || type.includes('CDDL')) return 2000;
   if (type.includes('CDD')) return 1800;
   if (type.includes('CDE-L') || type.includes('CDE LONG') || type.includes('CDEL')) return 1300;
@@ -91,7 +88,7 @@ const RouteAccordion = ({ rute, badgeClass }: any) => {
       <div className="accordion-header" onClick={() => setIsOpen(!isOpen)}>
         <span className="accordion-title" style={{ color: '#38bdf8', fontFamily: 'monospace', fontSize: '14px', letterSpacing: '1px' }}>{rute.code}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '11px', color: '#cbd5e1' }}>Peak: <strong style={{ color: rute.netLoadPeakPct > 100 ? '#f87171' : '#38bdf8' }}>{rute.peakLoad} Pkt ({rute.netLoadPeakPct}%)</strong></span>
+          <span style={{ fontSize: '11px', color: '#cbd5e1' }}>Net Load: <strong style={{ color: rute.netLoadPeakPct > 100 ? '#f87171' : '#38bdf8' }}>{rute.netLoadPeakPct}%</strong></span>
           <span className={`badge ${badgeClass}`}>{rute.status}</span>
           <span style={{ fontSize: '10px', color: '#94a3b8' }}>{isOpen ? '▲' : '▼'}</span>
         </div>
@@ -108,14 +105,12 @@ const RouteAccordion = ({ rute, badgeClass }: any) => {
               <strong style={{ color: '#f8fafc' }}>{rute.pu} / {rute.drop} Pkt</strong>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
-              <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>MB & BP</span>
-              <strong style={{ color: '#fbbf24' }}>{rute.mb} MB / {rute.bp} BP</strong>
+              <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>Peak Load</span>
+              <strong style={{ color: '#fbbf24' }}>{rute.peakLoad} Pkt</strong>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
-              <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>Audit Selisih</span>
-              <strong style={{ color: rute.discrepancy !== 0 ? '#f87171' : '#10b981' }}>
-                {rute.discrepancy === 0 ? 'Match (0)' : `Selisih: ${rute.discrepancy}`}
-              </strong>
+              <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>Target Capacity</span>
+              <strong style={{ color: '#38bdf8' }}>{rute.routeTargetCapacity} Pkt</strong>
             </div>
           </div>
         </div>
@@ -206,7 +201,7 @@ export default function App() {
   const [rawGasData, setRawGasData] = useState<any[]>([]);
   
   const [dashboardData, setDashboardData] = useState<any>({
-    kpi: { tripCount: 0, totalPurePU: 0, totalPureDrop: 0, totalWorkloadEffort: 0, overallSlaPct: 0, overallPeakLoadPct: 0, overallWorkloadPct: 0, discrepancyCount: 0 },
+    kpi: { tripCount: 0, totalPurePU: 0, totalPureDrop: 0, totalWorkloadEffort: 0, overallSlaPct: 0, overallNetLoadRatePct: 0 },
     routeRows: [],
     crewRows: [],
     pointRows: [],
@@ -238,7 +233,7 @@ export default function App() {
   const timeString = time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const dateString = time.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
-  // 1. FETCH RAW DATA
+  // 1. FETCH RAW DATA WITH LOCALSTORAGE CACHING
   useEffect(() => {
     const fetchRawData = async () => {
       const CACHE_KEY = "transport_glass_raw_cache";
@@ -275,7 +270,7 @@ export default function App() {
     fetchRawData();
   }, []);
 
-  // 2. KALKULASI UTAMA (DENGAN KOREKSI VOLUME BULKY YANG BENAR)
+  // 2. KALKULASI UTAMA & PERHITUNGAN AKUMULASI RATA-RATA NET LOAD RATE %
   useEffect(() => {
     if (!rawGasData || rawGasData.length === 0) return;
 
@@ -300,7 +295,6 @@ export default function App() {
     let totalMB = 0;
     let totalBP = 0;
     let onTimeCount = 0;
-    let totalDiscrepancies = 0;
 
     let routeMap: any = {};
     let unitCapacityMap: any = {}; 
@@ -315,11 +309,9 @@ export default function App() {
       const helper = String(d['Asmob/Helper'] || 'Helper Unassigned').trim();
       const unitType = String(d['Tipe Unit'] || 'CDE-L').trim();
       
-      // Deteksi Ekspedisi Bulky
       const combinedInfo = (rute + ' ' + String(d['Keterangan'] || '') + ' ' + String(d['Pin Point'] || '')).toUpperCase();
       const isBulkyTask = combinedInfo.includes('BULKY') || combinedInfo.includes('KARUNG') || combinedInfo.includes('SUNTER') || rute.startsWith('STR-');
 
-      // Ambil benchmark yang sudah presisi dalam satuan Pcs
       const unitBenchmark = getUnitCapacityBenchmark(unitType, isBulkyTask);
       
       const pinPoint = String(d['Pin Point'] || 'Unknown').trim();
@@ -337,8 +329,6 @@ export default function App() {
       const qtyPerStop = Number(d['Jumlah PU']) || 0;
       const mbVal = Number(d['MB']) || 0;
       const bpVal = Number(d['BP']) || 0;
-      
-      const gsheetGrandTotalPU = Number(d['Grand Total PU']) || 0;
 
       let paketPU = 0;
       let paketDrop = 0;
@@ -349,7 +339,6 @@ export default function App() {
         paketPU = qtyPerStop;
       }
 
-      // Total Pcs Aktual di Titik Stop
       const totalPointLoad = qtyPerStop + mbVal + bpVal;
 
       totalPurePU += paketPU;
@@ -385,12 +374,10 @@ export default function App() {
       if (!routeMap[rute]) {
         routeMap[rute] = { 
           points: 0, pu: 0, drop: 0, mb: 0, bp: 0, 
-          trips: new Map<string, number>(), onTime: 0, totalDelay: 0, delayCount: 0, drivers: new Set(),
-          gsheetRefTotal: gsheetGrandTotalPU
+          trips: new Map<string, number>(), onTime: 0, totalDelay: 0, delayCount: 0, drivers: new Set()
         };
       }
       routeMap[rute].points++;
-      // Set trip capacity memastikan double counting tidak terjadi (karena key dateRute hanya unik per trip armada/hari)
       routeMap[rute].trips.set(dateRute, unitBenchmark);
       routeMap[rute].drivers.add(`${driver} & ${helper}`);
       routeMap[rute].pu += paketPU;
@@ -440,7 +427,8 @@ export default function App() {
       totalPeakVolumeAllRoutes += Math.max(r.pu, r.drop) + r.mb + r.bp;
     });
 
-    const overallPeakLoadPct = totalTargetCapacityAllTrips > 0 
+    // RATA-RATA AKUMULASI NET LOAD RATE ALL ROUTES (%)
+    const overallNetLoadRatePct = totalTargetCapacityAllTrips > 0 
       ? Math.round((totalPeakVolumeAllRoutes / totalTargetCapacityAllTrips) * 100) 
       : 0;
 
@@ -449,22 +437,16 @@ export default function App() {
        const sla = r.points > 0 ? Math.round((r.onTime / r.points) * 100) : 0;
        const avgDelay = r.delayCount > 0 ? Math.round(r.totalDelay / r.delayCount) : 0;
        
-       // Peak Load murni penjumlahan PU Aktual + MB + BP 
        const peakLoad = Math.max(r.pu, r.drop) + r.mb + r.bp;
        const totalWorkload = r.pu + r.drop + r.mb + r.bp;
        
-       // routeTargetCapacity diset dari nilai map trips armada (mencegah duplikasi kalkulasi round-trip)
        let routeTargetCapacity = 0;
        r.trips.forEach((capBenchmark: number) => {
          routeTargetCapacity += capBenchmark;
        });
 
-       // 1125 / 2500 * 100 = 45% (Sempurna akurat dengan bukti lapangan)
        const netLoadPeakPct = routeTargetCapacity > 0 ? Math.round((peakLoad / routeTargetCapacity) * 100) : 0;
        const netLoadTotalPct = routeTargetCapacity > 0 ? Math.round((totalWorkload / routeTargetCapacity) * 100) : 0;
-
-       const discrepancy = r.gsheetRefTotal > 0 ? (totalWorkload - r.gsheetRefTotal) : 0;
-       if (discrepancy !== 0) totalDiscrepancies++;
 
        let status = 'OPTIMAL';
        if (netLoadPeakPct > 100) status = 'OVERLOAD';
@@ -482,9 +464,9 @@ export default function App() {
           avgDelay: avgDelay > 0 ? `+${avgDelay}m` : '0m', 
           peakLoad,
           totalWorkload,
+          routeTargetCapacity,
           netLoadPeakPct, 
           netLoadTotalPct,
-          discrepancy,
           status,
           assignedCrew: Array.from(r.drivers).join(', ')
        };
@@ -539,8 +521,7 @@ export default function App() {
          totalPureDrop, 
          totalWorkloadEffort, 
          overallSlaPct, 
-         overallPeakLoadPct,
-         discrepancyCount: totalDiscrepancies
+         overallNetLoadRatePct
        },
        routeRows,
        crewRows,
@@ -917,7 +898,7 @@ export default function App() {
                 </div>
              </div>
 
-             {/* 6 Kartu KPI Grid 3x2 */}
+             {/* 6 Kartu KPI Grid 3x2 (Termasuk Net Load Rate %) */}
              <div className="kpi-grid-3x2">
                 <div className="kpi-card"><div className="title">Total Trip</div><div className="value">{dashboardData.kpi.tripCount}</div><div className="subtext">Unit Aktif</div></div>
                 <div className="kpi-card"><div className="title">PU</div><div className="value" style={{ color: '#0ea5e9' }}>{dashboardData.kpi.totalPurePU}</div><div className="subtext">Pengambilan (Pkt)</div></div>
@@ -925,11 +906,11 @@ export default function App() {
                 <div className="kpi-card"><div className="title">Total Workload</div><div className="value">{dashboardData.kpi.totalWorkloadEffort}</div><div className="subtext">Points Visit</div></div>
                 <div className="kpi-card"><div className="title">SLA On-Time</div><div className="value">{dashboardData.kpi.overallSlaPct}%</div><div className="subtext">Aman (No Delay)</div></div>
                 <div className="kpi-card">
-                  <div className="title">Audit Discrepancy</div>
-                  <div className="value" style={{ color: dashboardData.kpi.discrepancyCount > 0 ? '#f87171' : '#10b981' }}>
-                    {dashboardData.kpi.discrepancyCount} Rute
+                  <div className="title">Net Load Rate %</div>
+                  <div className="value" style={{ color: dashboardData.kpi.overallNetLoadRatePct > 100 ? '#f87171' : '#38bdf8' }}>
+                    {dashboardData.kpi.overallNetLoadRatePct}%
                   </div>
-                  <div className="subtext">Selisih vs Grand Total GSheet</div>
+                  <div className="subtext">Rata-rata Utilitas Armada</div>
                 </div>
              </div>
 
@@ -1028,7 +1009,7 @@ export default function App() {
           {activeMenu === 'routes' && (
             <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
               <div className="panel-header" style={{ padding: '20px 20px 0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3>Route Performance Matrix (Precise Volume & Audit)</h3>
+                <h3>Route Performance Matrix</h3>
                 <span style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', background: 'rgba(14, 165, 233, 0.15)', color: '#38bdf8' }}>{filteredRoutes.length} Rute Dipantau</span>
               </div>
               
@@ -1043,8 +1024,8 @@ export default function App() {
                       <th>MB</th>
                       <th>BP</th>
                       <th>PEAK LOAD</th>
-                      <th>NET LOAD %</th>
-                      <th>AUDIT SELISIH</th>
+                      <th>TARGET CAP</th>
+                      <th>NET LOAD RATE %</th>
                       <th>STATUS</th>
                     </tr>
                   </thead>
@@ -1058,12 +1039,8 @@ export default function App() {
                         <td style={{ color: '#fbbf24' }}>{r.mb}</td>
                         <td style={{ color: '#e879f9' }}>{r.bp}</td>
                         <td style={{ color: r.netLoadPeakPct > 100 ? '#f87171' : '#f8fafc', fontWeight: 'bold' }}>{r.peakLoad} Pkt</td>
+                        <td style={{ color: '#cbd5e1' }}>{r.routeTargetCapacity} Pkt</td>
                         <td style={{ color: r.netLoadPeakPct > 100 ? '#f87171' : '#38bdf8', fontWeight: 'bold' }}>{r.netLoadPeakPct}%</td>
-                        <td>
-                          <span style={{ color: r.discrepancy !== 0 ? '#f87171' : '#10b981', fontWeight: 'bold', fontSize: '11px' }}>
-                            {r.discrepancy === 0 ? 'Match' : `Δ ${r.discrepancy}`}
-                          </span>
-                        </td>
                         <td><span className={`badge ${getBadgeClass(r.status)}`}>{r.status}</span></td>
                       </tr>
                     ))}
