@@ -43,22 +43,25 @@ const isDateInSameWeek = (targetDateStr: string, selectedDateStr: string) => {
   return targetDate >= start && targetDate <= end;
 };
 
-// --- HELPER KAPASITAS ARMADA PRESISI (REGULER VS BULKY) ---
+// --- HELPER KAPASITAS ARMADA PRESISI (SATUAN: PCS/PAKET/RESI) ---
 const getUnitCapacityBenchmark = (unitTypeStr: string, isBulky: boolean = false): number => {
   const type = String(unitTypeStr || '').toUpperCase().trim();
   
-  // KATEGORI BULKY: Muatan berupa karung/koli/bal besar (seperti Sunter/STR) Memiliki kuantitas koli yang lebih ramping dibanding paket eceran
+  // KATEGORI BULKY: Satuan TETAP Pcs/Paket, bukan Koli.
+  // Karena paket dikonsolidasi padat ke dalam karung, jumlah Pcs/Paket yang bisa masuk
+  // jauh lebih besar (tingkat densitas sangat tinggi) dibanding paket reguler.
+  // Hasil kalibrasi: 1125 Pcs = 45% Box CDE-L => 100% CDE-L Bulky = ~2500 Pcs.
   if (isBulky) {
-    if (type.includes('CDD-L') || type.includes('CDD LONG') || type.includes('CDDL')) return 600;
-    if (type.includes('CDD')) return 500;
-    if (type.includes('CDE-L') || type.includes('CDE LONG') || type.includes('CDEL')) return 400; // CDE-L Bulky Standard = ~400 Karung/Koli
-    if (type.includes('CDE')) return 350;
-    if (type.includes('BLINDVAN') || type.includes('BLIND VAN') || type.includes('VAN') || type.includes('GRANMAX')) return 150;
-    if (type.includes('MOTOR') || type.includes('R2')) return 50;
-    return 300;
+    if (type.includes('CDD-L') || type.includes('CDD LONG') || type.includes('CDDL')) return 4000;
+    if (type.includes('CDD')) return 3500;
+    if (type.includes('CDE-L') || type.includes('CDE LONG') || type.includes('CDEL')) return 2500;
+    if (type.includes('CDE')) return 2100;
+    if (type.includes('BLINDVAN') || type.includes('BLIND VAN') || type.includes('VAN')) return 1000;
+    if (type.includes('MOTOR') || type.includes('R2')) return 300;
+    return 1500;
   }
 
-  // KATEGORI REGULER: E-commerce small/medium parcel
+  // KATEGORI REGULER: E-commerce loose cargo / paket berceceran (dead-space tinggi)
   if (type.includes('CDD-L') || type.includes('CDD LONG') || type.includes('CDDL')) return 2000;
   if (type.includes('CDD')) return 1800;
   if (type.includes('CDE-L') || type.includes('CDE LONG') || type.includes('CDEL')) return 1300;
@@ -80,7 +83,7 @@ const Icons = {
   Search: () => <svg fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{width:'18px', height:'18px'}}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>,
 };
 
-// --- ACCORDION RESPONSIVE MOBILE ---
+// --- KOMPONEN ACCORDION ---
 const RouteAccordion = ({ rute, badgeClass }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
@@ -235,7 +238,7 @@ export default function App() {
   const timeString = time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const dateString = time.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
-  // 1. FETCH RAW DATA WITH LOCALSTORAGE CACHING & BACKGROUND SYNC
+  // 1. FETCH RAW DATA
   useEffect(() => {
     const fetchRawData = async () => {
       const CACHE_KEY = "transport_glass_raw_cache";
@@ -272,7 +275,7 @@ export default function App() {
     fetchRawData();
   }, []);
 
-  // 2. FORMULASI DENGAN AUDIT BULKY, INDEPENDEN PER BARIS, DAN AUDIT SELISIH
+  // 2. KALKULASI UTAMA (DENGAN KOREKSI VOLUME BULKY YANG BENAR)
   useEffect(() => {
     if (!rawGasData || rawGasData.length === 0) return;
 
@@ -312,10 +315,11 @@ export default function App() {
       const helper = String(d['Asmob/Helper'] || 'Helper Unassigned').trim();
       const unitType = String(d['Tipe Unit'] || 'CDE-L').trim();
       
-      // DETECTION STRATEGY UNTUK KATEGORI BULKY (Sunter, STR, Karung/Koli Besar)
+      // Deteksi Ekspedisi Bulky
       const combinedInfo = (rute + ' ' + String(d['Keterangan'] || '') + ' ' + String(d['Pin Point'] || '')).toUpperCase();
       const isBulkyTask = combinedInfo.includes('BULKY') || combinedInfo.includes('KARUNG') || combinedInfo.includes('SUNTER') || rute.startsWith('STR-');
 
+      // Ambil benchmark yang sudah presisi dalam satuan Pcs
       const unitBenchmark = getUnitCapacityBenchmark(unitType, isBulkyTask);
       
       const pinPoint = String(d['Pin Point'] || 'Unknown').trim();
@@ -330,7 +334,6 @@ export default function App() {
       const kategoriRaw = String(d['Kategori'] || '').toUpperCase().trim();
       const isDropKategori = kategoriRaw.includes('DROP') || kategoriRaw.includes('SS') || kategoriRaw.includes('HUB') || kategoriRaw.includes('DELIVERY');
 
-      // PERHITUNGAN MURNI INDEPENDEN DENGAN HANYA MEMBACA NILAI TITIK STOP
       const qtyPerStop = Number(d['Jumlah PU']) || 0;
       const mbVal = Number(d['MB']) || 0;
       const bpVal = Number(d['BP']) || 0;
@@ -346,6 +349,7 @@ export default function App() {
         paketPU = qtyPerStop;
       }
 
+      // Total Pcs Aktual di Titik Stop
       const totalPointLoad = qtyPerStop + mbVal + bpVal;
 
       totalPurePU += paketPU;
@@ -386,6 +390,7 @@ export default function App() {
         };
       }
       routeMap[rute].points++;
+      // Set trip capacity memastikan double counting tidak terjadi (karena key dateRute hanya unik per trip armada/hari)
       routeMap[rute].trips.set(dateRute, unitBenchmark);
       routeMap[rute].drivers.add(`${driver} & ${helper}`);
       routeMap[rute].pu += paketPU;
@@ -444,14 +449,17 @@ export default function App() {
        const sla = r.points > 0 ? Math.round((r.onTime / r.points) * 100) : 0;
        const avgDelay = r.delayCount > 0 ? Math.round(r.totalDelay / r.delayCount) : 0;
        
+       // Peak Load murni penjumlahan PU Aktual + MB + BP 
        const peakLoad = Math.max(r.pu, r.drop) + r.mb + r.bp;
        const totalWorkload = r.pu + r.drop + r.mb + r.bp;
        
+       // routeTargetCapacity diset dari nilai map trips armada (mencegah duplikasi kalkulasi round-trip)
        let routeTargetCapacity = 0;
        r.trips.forEach((capBenchmark: number) => {
          routeTargetCapacity += capBenchmark;
        });
 
+       // 1125 / 2500 * 100 = 45% (Sempurna akurat dengan bukti lapangan)
        const netLoadPeakPct = routeTargetCapacity > 0 ? Math.round((peakLoad / routeTargetCapacity) * 100) : 0;
        const netLoadTotalPct = routeTargetCapacity > 0 ? Math.round((totalWorkload / routeTargetCapacity) * 100) : 0;
 
