@@ -89,15 +89,15 @@ const RouteAccordion = ({ rute, badgeClass }: any) => {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>PU vs Drop</span>
-              <strong style={{ color: '#f8fafc' }}>{rute.puDrop}</strong>
+              <strong style={{ color: '#f8fafc' }}>{rute.pu} / {rute.drop} Pkt</strong>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
+              <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>MB & BP</span>
+              <strong style={{ color: '#fbbf24' }}>{rute.mb} MB / {rute.bp} BP</strong>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
               <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>Peak Load (Box)</span>
               <strong style={{ color: rute.netLoadPeakPct > 100 ? '#f87171' : '#38bdf8' }}>{rute.peakLoad} Pkt ({rute.netLoadPeakPct}%)</strong>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
-              <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' }}>Total Workload</span>
-              <strong style={{ color: '#fbbf24' }}>{rute.totalWorkload} Pkt ({rute.netLoadTotalPct}%)</strong>
             </div>
           </div>
         </div>
@@ -153,7 +153,7 @@ const PointAccordion = ({ point, badgeClass }: any) => {
       <div className="accordion-header" onClick={() => setIsOpen(!isOpen)}>
         <span className="accordion-title" style={{ color: '#38bdf8', fontFamily: 'monospace', fontSize: '14px', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{point.name}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span className={`badge ${badgeClass}`}>{point.visit}</span>
+          <span className={`badge ${badgeClass}`}>{point.kategori}</span>
           <span style={{ fontSize: '10px', color: '#94a3b8' }}>{isOpen ? '▲' : '▼'}</span>
         </div>
       </div>
@@ -161,16 +161,20 @@ const PointAccordion = ({ point, badgeClass }: any) => {
         <div className="accordion-body" style={{ background: 'rgba(0,0,0,0.3)', padding: '16px' }}>
            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px', fontSize: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
-              <span style={{ color: '#94a3b8' }}>PU / Drop SS:</span>
-              <strong style={{ color: '#f8fafc' }}>{point.puDrop}</strong>
+              <span style={{ color: '#94a3b8' }}>ETA / ATA:</span>
+              <strong style={{ color: '#f8fafc' }}>{point.eta} / {point.visit}</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
-              <span style={{ color: '#94a3b8' }}>MB & BP:</span>
-              <strong style={{ color: '#fbbf24' }}>{point.mbBp}</strong>
+              <span style={{ color: '#94a3b8' }}>Jumlah Parcel:</span>
+              <strong style={{ color: '#38bdf8' }}>{point.parcel} Pkt</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
+              <span style={{ color: '#94a3b8' }}>MB / BP:</span>
+              <strong style={{ color: '#fbbf24' }}>{point.mb} MB / {point.bp} BP</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ color: '#94a3b8' }}>Status:</span>
-              <strong style={{ color: '#34d399' }}>{point.status}</strong>
+              <strong style={{ color: point.status.includes('LATE') ? '#f87171' : '#34d399' }}>{point.status}</strong>
             </div>
           </div>
         </div>
@@ -253,7 +257,7 @@ export default function App() {
     fetchRawData();
   }, []);
 
-  // 2. FORMULASI LOGISTIK OPERASIONAL MURNI (UNCAPPED & COMPLETE AGGREGATION)
+  // 2. EKSTRAKSI GSHEET HEADERS AKTUAL DENGAN PEMISAHAN KATEGORI PU & DROP
   useEffect(() => {
     if (!rawGasData || rawGasData.length === 0) return;
 
@@ -302,21 +306,27 @@ export default function App() {
         processedTripCapacities[dateRute] = unitBenchmark;
       }
 
-      const kategori = String(d['Kategori'] || '').toLowerCase();
-      const isPickUp = kategori.includes('pickup') || kategori.includes('pick');
-      const isDrop = kategori.includes('ss') || kategori.includes('drop');
-      
-      const puVal = Number(d['Jumlah PU']) || 0;
-      const dropVal = Number(d['Jumlah Drop']) || Number(d['Jumlah SS']) || 0;
-      const genVal = Number(d['Jumlah']) || Number(d['Jumlah Paket']) || 0;
-      const mbVal = Number(d['MB']) || 0;
-      const bpVal = Number(d['BP']) || 0;
-      
-      let paketPU = isPickUp ? (puVal || genVal) : 0;
-      let paketDrop = isDrop ? (dropVal || genVal) : 0;
-      if (!isPickUp && !isDrop) { paketPU = puVal; paketDrop = dropVal; }
+      // --- PEMBACAAN GSHEET HEADER AKTUAL ---
+      const kategoriRaw = String(d['Kategori'] || '').toUpperCase().trim();
+      const isPickUp = kategoriRaw.includes('PICK') || kategoriRaw.includes('PU');
+      const isDrop = kategoriRaw.includes('DROP') || kategoriRaw.includes('SS') || kategoriRaw.includes('HUB') || kategoriRaw.includes('DELIVERY');
 
-      const totalPointLoad = paketPU + paketDrop + mbVal + bpVal;
+      const rawParcelVal = Number(d['Jumlah PU']) || Number(d['Grand Total PU']) || 0;
+      const mbVal = Number(d['MB']) || Number(d['Total MB']) || 0;
+      const bpVal = Number(d['BP']) || Number(d['Total BP']) || 0;
+
+      let paketPU = 0;
+      let paketDrop = 0;
+
+      if (isPickUp) {
+        paketPU = rawParcelVal;
+      } else if (isDrop) {
+        paketDrop = rawParcelVal;
+      } else {
+        paketPU = rawParcelVal; // Fallback jika kategori tidak teridentifikasi spesifik
+      }
+
+      const totalPointLoad = rawParcelVal + mbVal + bpVal;
 
       totalPurePU += paketPU;
       totalPureDrop += paketDrop;
@@ -381,9 +391,13 @@ export default function App() {
 
       pointRows.push({
          name: pinPoint,
+         kategori: kategoriRaw || (isPickUp ? 'PICKUP' : 'DROP'),
+         eta: eta,
          visit: ata,
-         puDrop: `${paketPU} / ${paketDrop}`,
-         mbBp: `${mbVal} / ${bpVal}`,
+         parcel: rawParcelVal,
+         mb: mbVal,
+         bp: bpVal,
+         totalLoad: totalPointLoad,
          status: delay > 0 ? `LATE ${delay}m` : 'ON-TIME'
       });
     });
@@ -392,11 +406,9 @@ export default function App() {
     const totalWorkloadEffort = filtered.length;
     const overallSlaPct = totalWorkloadEffort > 0 ? Math.round((onTimeCount / totalWorkloadEffort) * 100) : 0;
     
-    // --- AKUMULASI KHUSUS OPERASIONAL MURNI ---
     const totalTargetCapacityAllTrips = Object.values(processedTripCapacities).reduce((a, b) => a + b, 0);
     const totalWorkloadHandled = totalPurePU + totalPureDrop + totalMB + totalBP;
 
-    // Daily Overall Peak Load % (Kapasitas Maksimal Ruang) & Workload Effort % (Uncapped)
     let totalPeakVolumeAllRoutes = 0;
     Object.keys(routeMap).forEach(rKey => {
       const r = routeMap[rKey];
@@ -411,7 +423,6 @@ export default function App() {
       ? Math.round((totalWorkloadHandled / totalTargetCapacityAllTrips) * 100) 
       : 0;
 
-    // --- ROW RUTE DENGAN NILAI UNCAPPED & STATUS OVERLOAD ---
     const routeRows = Object.keys(routeMap).map(rute => {
        const r = routeMap[rute];
        const sla = r.points > 0 ? Math.round((r.onTime / r.points) * 100) : 0;
@@ -425,19 +436,21 @@ export default function App() {
          routeTargetCapacity += capBenchmark;
        });
 
-       // MURNI DITAMPILKAN APA ADANYA (TIDAK DILIMIT KE 100%)
        const netLoadPeakPct = routeTargetCapacity > 0 ? Math.round((peakLoad / routeTargetCapacity) * 100) : 0;
        const netLoadTotalPct = routeTargetCapacity > 0 ? Math.round((totalWorkload / routeTargetCapacity) * 100) : 0;
 
        let status = 'OPTIMAL';
-       if (netLoadPeakPct > 100) status = 'OVERLOAD'; // STATUS DARURAT UNTUK CONTROL TOWER
+       if (netLoadPeakPct > 100) status = 'OVERLOAD';
        else if (sla < 80) status = 'CRITICAL';
        else if (sla < 95) status = 'WARNING';
 
        return {
           code: rute, 
           points: r.points, 
-          puDrop: `${r.pu} / ${r.drop}`, 
+          pu: r.pu,
+          drop: r.drop,
+          mb: r.mb,
+          bp: r.bp,
           sla: `${sla}%`,
           avgDelay: avgDelay > 0 ? `+${avgDelay}m` : '0m', 
           peakLoad,
@@ -477,7 +490,7 @@ export default function App() {
        const uData = unitCapacityMap[uType];
        const trips = uData.tripCount.size;
        const avgPerTrip = trips > 0 ? Math.round(uData.totalLoad / trips) : 0;
-       const efficiency = Math.round((avgPerTrip / uData.benchmark) * 100); // Uncapped efficiency
+       const efficiency = Math.round((avgPerTrip / uData.benchmark) * 100);
        return { 
          type: uType, trips, totalLoad: uData.totalLoad, 
          avgPerTrip, efficiency, routesCount: uData.routes.size,
@@ -530,7 +543,7 @@ export default function App() {
 
   const getBadgeClass = (s: string) => {
     if (!s) return 'badge-optimal';
-    if (s.includes('OVERLOAD')) return 'badge-critical'; // Red Alert
+    if (s.includes('OVERLOAD')) return 'badge-critical';
     if (s.includes('CRITICAL')) return 'badge-critical';
     if (s.includes('WARNING')) return 'badge-warning';
     return 'badge-optimal';
@@ -987,21 +1000,23 @@ export default function App() {
           {activeMenu === 'routes' && (
             <div className="card-panel" style={{ padding: 0, overflow: 'hidden' }}>
               <div className="panel-header" style={{ padding: '20px 20px 0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3>Route SLA & Load Matrix (Real Operational)</h3>
+                <h3>Route Performance Matrix (GSheet Mapped)</h3>
                 <span style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', background: 'rgba(14, 165, 233, 0.15)', color: '#38bdf8' }}>{filteredRoutes.length} Rute Dipantau</span>
               </div>
               
               <div style={{ overflowX: 'auto', padding: '0 20px 20px 20px' }}>
-                <table className="desktop-table-view" style={{ width: '100%', minWidth: '850px', borderCollapse: 'collapse' }}>
+                <table className="desktop-table-view" style={{ width: '100%', minWidth: '900px', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr>
                       <th>RUTE</th>
                       <th>STOP</th>
-                      <th>PU / DROP</th>
+                      <th>PARCEL PU</th>
+                      <th>PARCEL DROP</th>
+                      <th>MB</th>
+                      <th>BP</th>
+                      <th>PEAK LOAD</th>
+                      <th>NET LOAD %</th>
                       <th>SLA %</th>
-                      <th>AVG DELAY</th>
-                      <th>PEAK LOAD (BOX)</th>
-                      <th>TOTAL WORKLOAD</th>
                       <th>STATUS</th>
                     </tr>
                   </thead>
@@ -1010,25 +1025,17 @@ export default function App() {
                       <tr key={i}>
                         <td style={{ color: '#38bdf8', fontWeight: 'bold', fontFamily: 'monospace' }}>{r.code}</td>
                         <td>{r.points}</td>
-                        <td>{r.puDrop}</td>
+                        <td style={{ color: '#0ea5e9', fontWeight: 'bold' }}>{r.pu}</td>
+                        <td style={{ color: '#10b981', fontWeight: 'bold' }}>{r.drop}</td>
+                        <td style={{ color: '#fbbf24' }}>{r.mb}</td>
+                        <td style={{ color: '#e879f9' }}>{r.bp}</td>
+                        <td style={{ color: r.netLoadPeakPct > 100 ? '#f87171' : '#f8fafc', fontWeight: 'bold' }}>{r.peakLoad} Pkt</td>
+                        <td style={{ color: r.netLoadPeakPct > 100 ? '#f87171' : '#38bdf8', fontWeight: 'bold' }}>{r.netLoadPeakPct}%</td>
                         <td>{r.sla}</td>
-                        <td style={{ color: '#f87171' }}>{r.avgDelay}</td>
-                        <td>
-                          <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <strong style={{ color: r.netLoadPeakPct > 100 ? '#f87171' : '#38bdf8' }}>{r.peakLoad} Pkt</strong>
-                            <span style={{ fontSize: '10px', color: r.netLoadPeakPct > 100 ? '#f87171' : '#94a3b8' }}>{r.netLoadPeakPct}% Capacity</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <strong style={{ color: '#f8fafc' }}>{r.totalWorkload} Pkt</strong>
-                            <span style={{ fontSize: '10px', color: '#64748b' }}>{r.netLoadTotalPct}% Effort</span>
-                          </div>
-                        </td>
                         <td><span className={`badge ${getBadgeClass(r.status)}`}>{r.status}</span></td>
                       </tr>
                     ))}
-                    {filteredRoutes.length === 0 && (<tr><td colSpan={8} style={{ textAlign: 'center', padding: '16px', color: 'var(--app-muted)' }}>Data rute tidak ditemukan</td></tr>)}
+                    {filteredRoutes.length === 0 && (<tr><td colSpan={10} style={{ textAlign: 'center', padding: '16px', color: 'var(--app-muted)' }}>Data rute tidak ditemukan</td></tr>)}
                   </tbody>
                 </table>
                 <div className="mobile-accordion-list">
@@ -1045,23 +1052,37 @@ export default function App() {
                 <span style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399' }}>Live Data</span>
               </div>
               <div style={{ overflowX: 'auto', padding: '0 20px 20px 20px' }}>
-                <table className="desktop-table-view" style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse' }}>
+                <table className="desktop-table-view" style={{ width: '100%', minWidth: '750px', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr><th>NAMA POINT / SS</th><th>VISIT</th><th>PU / DROP</th><th>MB & BP DETAIL</th><th>STATUS</th></tr>
+                    <tr>
+                      <th>NAMA POINT / SS</th>
+                      <th>KATEGORI</th>
+                      <th>ETA / ATA</th>
+                      <th>JUMLAH PARCEL</th>
+                      <th>MB</th>
+                      <th>BP</th>
+                      <th>TOTAL LOAD</th>
+                      <th>STATUS</th>
+                    </tr>
                   </thead>
                   <tbody>
                     {filteredPoints.map((p: any, i: number) => (
                       <tr key={i}>
                         <td style={{ color: '#38bdf8', fontWeight: 'bold', fontFamily: 'monospace' }}>{p.name}</td>
-                        <td>{p.visit}</td><td>{p.puDrop}</td><td style={{ color: '#fbbf24' }}>{p.mbBp}</td>
-                        <td><span className={`badge ${getBadgeClass(p.status)}`}>{p.status}</span></td>
+                        <td><span className="badge badge-warning" style={{ fontSize: '9px' }}>{p.kategori}</span></td>
+                        <td>{p.eta} / {p.visit}</td>
+                        <td style={{ color: '#0ea5e9', fontWeight: 'bold' }}>{p.parcel} Pkt</td>
+                        <td style={{ color: '#fbbf24' }}>{p.mb}</td>
+                        <td style={{ color: '#e879f9' }}>{p.bp}</td>
+                        <td style={{ color: '#f8fafc', fontWeight: 'bold' }}>{p.totalLoad} Pkt</td>
+                        <td><span className={`badge ${p.status.includes('LATE') ? 'badge-critical' : 'badge-optimal'}`}>{p.status}</span></td>
                       </tr>
                     ))}
-                    {filteredPoints.length === 0 && (<tr><td colSpan={5} style={{ textAlign: 'center', padding: '16px', color: 'var(--app-muted)' }}>Data point tidak ditemukan</td></tr>)}
+                    {filteredPoints.length === 0 && (<tr><td colSpan={8} style={{ textAlign: 'center', padding: '16px', color: 'var(--app-muted)' }}>Data point tidak ditemukan</td></tr>)}
                   </tbody>
                 </table>
                 <div className="mobile-accordion-list">
-                  {filteredPoints.map((p: any, i: number) => <PointAccordion key={i} point={p} badgeClass={getBadgeClass(p.status)} />)}
+                  {filteredPoints.map((p: any, i: number) => <PointAccordion key={i} point={p} badgeClass={p.status.includes('LATE') ? 'badge-critical' : 'badge-optimal'} />)}
                 </div>
               </div>
             </div>
