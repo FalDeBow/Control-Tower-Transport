@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Chart as ChartJS,
   ArcElement,
@@ -43,11 +43,25 @@ const isDateInSameWeek = (targetDateStr: string, selectedDateStr: string) => {
   return targetDate >= start && targetDate <= end;
 };
 
+// --- HELPER PARSE LATITUDE & LONGITUDE ---
+const parseCoordinates = (locStr: any): [number, number] | null => {
+  if (!locStr) return null;
+  const str = String(locStr).trim();
+  const parts = str.split(',');
+  if (parts.length >= 2) {
+    const lat = parseFloat(parts[0].trim());
+    const lng = parseFloat(parts[1].trim());
+    if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+      return [lat, lng];
+    }
+  }
+  return null;
+};
+
 // --- HELPER KAPASITAS ARMADA PRESISI (SATUAN: PCS/PAKET/RESI) ---
 const getUnitCapacityBenchmark = (unitTypeStr: string, isBulky: boolean = false): number => {
   const type = String(unitTypeStr || '').toUpperCase().trim();
   
-  // KATEGORI BULKY: Satuan Pcs/Paket (Hasil kalibrasi 1125 Pcs = 45% Box CDE-L => 100% CDE-L Bulky = ~2500 Pcs)
   if (isBulky) {
     if (type.includes('CDD-L') || type.includes('CDD LONG') || type.includes('CDDL')) return 4000;
     if (type.includes('CDD')) return 3500;
@@ -58,7 +72,6 @@ const getUnitCapacityBenchmark = (unitTypeStr: string, isBulky: boolean = false)
     return 1500;
   }
 
-  // KATEGORI REGULER: E-commerce loose cargo / paket berceceran
   if (type.includes('CDD-L') || type.includes('CDD LONG') || type.includes('CDDL')) return 2000;
   if (type.includes('CDD')) return 1800;
   if (type.includes('CDE-L') || type.includes('CDE LONG') || type.includes('CDEL')) return 1300;
@@ -225,6 +238,11 @@ export default function App() {
   const [isSlideMenuOpen, setIsSlideMenuOpen] = useState(false); 
   const [selectedRouteCode, setSelectedRouteCode] = useState('');
 
+  // --- REFS UNTUK LEAFLET MAP ---
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const markersGroupRef = useRef<any>(null);
+
   const [time, setTime] = useState(new Date());
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -232,6 +250,21 @@ export default function App() {
   }, []);
   const timeString = time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const dateString = time.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  // 0. LOAD LEAFLET CDN DYNAMICALLY
+  useEffect(() => {
+    if ((window as any).L) return;
+
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(link);
+
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.async = true;
+    document.head.appendChild(script);
+  }, []);
 
   // 1. FETCH RAW DATA WITH LOCALSTORAGE CACHING
   useEffect(() => {
@@ -315,6 +348,9 @@ export default function App() {
       const unitBenchmark = getUnitCapacityBenchmark(unitType, isBulkyTask);
       
       const pinPoint = String(d['Pin Point'] || 'Unknown').trim();
+      const locationRaw = d['Location'] || d['Lokasi'] || '';
+      const coords = parseCoordinates(locationRaw);
+
       const tgl = formatDateKey(d['Tanggal Ops'] || '');
       const dateRute = `${tgl}_${rute}_${driver}`;
       
@@ -365,7 +401,7 @@ export default function App() {
          const [eh, em] = eta.split(':').map(Number);
          const [th, tm] = ata.split(':').map(Number);
          if (!isNaN(eh) && !isNaN(th)) {
-           delay = (th * 60 + tm) - (eh * 60 + em);
+            delay = (th * 60 + tm) - (eh * 60 + em);
          }
       }
       
@@ -374,7 +410,8 @@ export default function App() {
       if (!routeMap[rute]) {
         routeMap[rute] = { 
           points: 0, pu: 0, drop: 0, mb: 0, bp: 0, 
-          trips: new Map<string, number>(), onTime: 0, totalDelay: 0, delayCount: 0, drivers: new Set()
+          trips: new Map<string, number>(), onTime: 0, totalDelay: 0, delayCount: 0, drivers: new Set(),
+          coordsList: []
         };
       }
       routeMap[rute].points++;
@@ -385,6 +422,10 @@ export default function App() {
       routeMap[rute].mb += mbVal;
       routeMap[rute].bp += bpVal;
       
+      if (coords) {
+        routeMap[rute].coordsList.push({ name: pinPoint, coords, ata, status: delay > 0 ? 'LATE' : 'ON-TIME' });
+      }
+
       if (delay <= 0) routeMap[rute].onTime++;
       if (delay > 0) { routeMap[rute].totalDelay += delay; routeMap[rute].delayCount++; }
 
@@ -411,7 +452,8 @@ export default function App() {
          mb: mbVal,
          bp: bpVal,
          totalLoad: totalPointLoad,
-         status: delay > 0 ? `LATE ${delay}m` : 'ON-TIME'
+         status: delay > 0 ? `LATE ${delay}m` : 'ON-TIME',
+         coords
       });
     });
 
@@ -427,7 +469,6 @@ export default function App() {
       totalPeakVolumeAllRoutes += Math.max(r.pu, r.drop) + r.mb + r.bp;
     });
 
-    // RATA-RATA AKUMULASI NET LOAD RATE ALL ROUTES (%)
     const overallNetLoadRatePct = totalTargetCapacityAllTrips > 0 
       ? Math.round((totalPeakVolumeAllRoutes / totalTargetCapacityAllTrips) * 100) 
       : 0;
@@ -454,21 +495,22 @@ export default function App() {
        else if (sla < 95) status = 'WARNING';
 
        return {
-          code: rute, 
-          points: r.points, 
-          pu: r.pu,
-          drop: r.drop,
-          mb: r.mb,
-          bp: r.bp,
-          sla: `${sla}%`,
-          avgDelay: avgDelay > 0 ? `+${avgDelay}m` : '0m', 
-          peakLoad,
-          totalWorkload,
-          routeTargetCapacity,
-          netLoadPeakPct, 
-          netLoadTotalPct,
-          status,
-          assignedCrew: Array.from(r.drivers).join(', ')
+         code: rute, 
+         points: r.points, 
+         pu: r.pu,
+         drop: r.drop,
+         mb: r.mb,
+         bp: r.bp,
+         sla: `${sla}%`,
+         avgDelay: avgDelay > 0 ? `+${avgDelay}m` : '0m', 
+         peakLoad,
+         totalWorkload,
+         routeTargetCapacity,
+         netLoadPeakPct, 
+         netLoadTotalPct,
+         status,
+         assignedCrew: Array.from(r.drivers).join(', '),
+         coordsList: r.coordsList
        };
     }).sort((a,b) => b.peakLoad - a.peakLoad);
 
@@ -536,6 +578,84 @@ export default function App() {
     }
 
   }, [rawGasData, mode, selectedDate, calendarViewDate]);
+
+  // 3. EFFECT UNTUK INISIALISASI & RENDERING LEAFLET MAP
+  useEffect(() => {
+    if (activeMenu !== 'geotag' || !mapContainerRef.current) return;
+    const L = (window as any).L;
+    if (!L) return;
+
+    // Inisialisasi Peta
+    if (!mapInstanceRef.current) {
+      const map = L.map(mapContainerRef.current).setView([-6.1751, 106.8272], 11);
+      
+      // Tile Layer CartoDB Dark Matter (Futuristik & Gratis)
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap &copy; CARTO',
+        subdomains: 'abcd',
+        maxZoom: 19
+      }).addTo(map);
+
+      mapInstanceRef.current = map;
+      markersGroupRef.current = L.featureGroup().addTo(map);
+    }
+
+    const map = mapInstanceRef.current;
+    const markersGroup = markersGroupRef.current;
+    markersGroup.clearLayers();
+
+    // Ambil detail rute terpilih
+    const selectedRoute = dashboardData.routeRows.find((r: any) => r.code === selectedRouteCode);
+    const pointsList = selectedRoute?.coordsList || [];
+
+    if (pointsList.length > 0) {
+      const latLngs: [number, number][] = [];
+
+      pointsList.forEach((pt: any, idx: number) => {
+        latLngs.push(pt.coords);
+        
+        // Marker Checkpoint
+        const marker = L.circleMarker(pt.coords, {
+          radius: 8,
+          fillColor: pt.status === 'LATE' ? '#f87171' : '#38bdf8',
+          color: '#ffffff',
+          weight: 2,
+          opacity: 1,
+          fillOpacity: 0.9
+        });
+
+        marker.bindPopup(`
+          <div style="font-family: sans-serif; font-size: 11px; color: #0f172a;">
+            <strong>Stop ${idx + 1}: ${pt.name}</strong><br/>
+            <span>Status: ${pt.status}</span><br/>
+            <span>Jam ATA: ${pt.ata || '-'}</span>
+          </div>
+        `);
+
+        markersGroup.addLayer(marker);
+      });
+
+      // Garis Rute (Polyline)
+      if (latLngs.length > 1) {
+        const polyline = L.polyline(latLngs, {
+          color: '#38bdf8',
+          weight: 4,
+          opacity: 0.8,
+          dashArray: '6, 8'
+        });
+        markersGroup.addLayer(polyline);
+      }
+
+      // Auto-fit bounds ke seluruh titik rute
+      map.fitBounds(markersGroup.getBounds(), { padding: [40, 40] });
+    } else {
+      // Default View Jakarta jika rute belum punya koordinat GPS
+      map.setView([-6.1751, 106.8272], 11);
+    }
+
+    setTimeout(() => { map.invalidateSize(); }, 200);
+
+  }, [activeMenu, selectedRouteCode, dashboardData]);
 
   const filteredRoutes = dashboardData.routeRows.filter((r: any) => r.code.toLowerCase().includes(searchQuery.toLowerCase()));
   const filteredPoints = dashboardData.pointRows.filter((p: any) => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -634,10 +754,6 @@ export default function App() {
   const handleMenuClick = (menu: string) => {
     setActiveMenu(menu);
     setIsSlideMenuOpen(false);
-  };
-
-  const renderMapsUrl = () => {
-    return `https://www.openstreetmap.org/export/embed.html?bbox=106.75,-6.25,106.95,-6.10&layer=mapnik&marker=-6.1751,106.8272`;
   };
 
   const getRankMedal = (idx: number) => {
@@ -1201,8 +1317,8 @@ export default function App() {
             <div className="card-panel">
               <div className="panel-header" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                 <div>
-                  <h3 style={{ color: '#38bdf8', fontSize: '16px' }}>GPS Live & History Maps</h3>
-                  <span style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Pemantauan rute real-time & advance status filter</span>
+                  <h3 style={{ color: '#38bdf8', fontSize: '16px' }}>GPS Live & History Maps (Leaflet OpenStreetMap)</h3>
+                  <span style={{ fontSize: '11px', color: 'var(--app-muted)' }}>Pemantauan rute interaktif, visualisasi lintasan checkpoint & status lokasi real-time</span>
                 </div>
                 
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -1238,7 +1354,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <div style={{ border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', overflow: 'hidden', height: '420px', background: '#0b1329', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                <div style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', overflow: 'hidden', height: '420px', background: '#0b1329', display: 'flex', flexDirection: 'column', position: 'relative' }}>
                   <div style={{ padding: '10px 16px', background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', zIndex: 10 }}>
                     <span style={{ color: 'var(--app-accent)', fontSize: '11px', fontWeight: 'bold', fontFamily: 'monospace' }}>🎯 Rute: {selectedRouteCode || 'Pilih Rute'}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1256,22 +1372,11 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div style={{ flex: 1, width: '100%', position: 'relative', background: '#0b1329' }}>
-                    {selectedRouteCode ? (
-                      <iframe 
-                        width="100%" 
-                        height="100%" 
-                        style={{ border: 0, position: 'absolute', top: 0, left: 0 }} 
-                        allowFullScreen 
-                        loading="lazy" 
-                        src={renderMapsUrl()}
-                      ></iframe>
-                    ) : (
-                      <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: '12px' }}>
-                        Pilih rute untuk melihat Maps
-                      </div>
-                    )}
-                  </div>
+                  {/* WIDGET PETA INTERAKTIF LEAFLET */}
+                  <div 
+                    ref={mapContainerRef} 
+                    style={{ flex: 1, width: '100%', height: '100%', zIndex: 1 }}
+                  />
                 </div>
               </div>
             </div>
