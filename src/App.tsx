@@ -267,22 +267,18 @@ export default function App() {
     document.head.appendChild(script);
   }, []);
 
-  // 1. FETCH RAW DATA WITH LOCALSTORAGE CACHING
+  // 1. FETCH RAW DATA WITH LOCALSTORAGE CACHING & 3-MINUTE AUTO REFRESH
   useEffect(() => {
     const fetchRawData = async () => {
       const CACHE_KEY = "transport_glass_raw_cache";
       
       const localData = localStorage.getItem(CACHE_KEY);
-      if (localData) {
+      if (localData && !rawGasData.length) {
         try {
-          const parsedCache = JSON.parse(localData);
-          setRawGasData(parsedCache); 
-          setIsLoading(false);
+          setRawGasData(JSON.parse(localData));
         } catch (e) {
           console.error("Cache parse error", e);
         }
-      } else {
-        setIsLoading(true);
       }
 
       try {
@@ -302,6 +298,13 @@ export default function App() {
     };
 
     fetchRawData();
+
+    // Auto-refresh setiap 3 menit (180.000 ms)
+    const intervalId = setInterval(() => {
+      fetchRawData();
+    }, 180000);
+
+    return () => clearInterval(intervalId);
   }, []);
 
   // 2. KALKULASI UTAMA & PERHITUNGAN AKUMULASI RATA-RATA NET LOAD RATE %
@@ -590,7 +593,7 @@ export default function App() {
     if (!mapInstanceRef.current) {
       const map = L.map(mapContainerRef.current).setView([-6.1751, 106.8272], 11);
       
-      // Tile Layer CartoDB Dark Matter (Futuristik & Gratis)
+      // Tile Layer CartoDB Dark Matter
       L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; OpenStreetMap &copy; CARTO',
         subdomains: 'abcd',
@@ -650,7 +653,6 @@ export default function App() {
       // Auto-fit bounds ke seluruh titik rute
       map.fitBounds(markersGroup.getBounds(), { padding: [40, 40] });
     } else {
-      // Default View Jakarta jika rute belum punya koordinat GPS
       map.setView([-6.1751, 106.8272], 11);
     }
 
@@ -1018,7 +1020,7 @@ export default function App() {
                 </div>
              </div>
 
-             {/* 6 Kartu KPI Grid 3x2 (Termasuk Net Load Rate %) */}
+             {/* 6 Kartu KPI Grid 3x2 */}
              <div className="kpi-grid-3x2">
                 <div className="kpi-card"><div className="title">Total Trip</div><div className="value">{dashboardData.kpi.tripCount}</div><div className="subtext">Unit Aktif</div></div>
                 <div className="kpi-card"><div className="title">PU</div><div className="value" style={{ color: '#0ea5e9' }}>{dashboardData.kpi.totalPurePU}</div><div className="subtext">Pengambilan (Pkt)</div></div>
