@@ -1,0 +1,11 @@
+{
+    "generated_at": "2026-09-04 05:38:11",
+    "source_file": "shipments.csv",
+    "metrics": {
+        "total_shipments": 6,
+        "delivered": 3,
+        "in_transit": 2,
+        "pending": 1,
+        "total_weight_tons": 6.0
+    }
+}
